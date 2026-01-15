@@ -2,3 +2,5 @@ ProjectOverview.txt
 ProjectRoadmap.txt
 .venv
 pyvenv.cfg
+/data/raw
+/data/processed

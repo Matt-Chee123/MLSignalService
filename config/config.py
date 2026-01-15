@@ -1,4 +1,5 @@
-from datetime import date
+import datetime
+from datetime import date, timedelta
 
 TICKERS = [
     'PG',    # Procter & Gamble
@@ -11,10 +12,11 @@ TICKERS = [
     'MRK'    # Merck
 ]
 
-START_DATE = '2021-01-01'
-END_DATE = '2026-15-01'
 
-RAW_DATA_PATH = '../data/raw'
-PROCESSED_DATA_PATH = '../data/processed'
+START_DATE = date.today() - timedelta(days=5*365)
+END_DATE = date.today()
+
+RAW_DATA_PATH = '../data/raw/'
+PROCESSED_DATA_PATH = '../data/processed/'
 
 INTERVAL = '1d'
