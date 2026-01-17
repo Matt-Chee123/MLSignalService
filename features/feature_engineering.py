@@ -39,17 +39,5 @@ class FeatureEngineer:
         df = self.add_rolling_volatility(df)
         df = self.add_rolling_momentum(df)
         df = self.add_lagged_returns(df)
+        df = df.dropna()
         return df
-
-def make_test_data():
-    dates = pd.date_range(start="2023-01-01", periods=10, freq="D")
-
-    data = {
-        "Open":   [100, 101, 102, 103, 104, 105, 106, 107, 108, 109],
-        "High":   [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
-        "Low":    [99, 100, 101, 102, 103, 104, 105, 106, 107, 108],
-        "Close":  [100, 101, 102, 104, 103, 105, 106, 108, 107, 109],
-        "Volume": [1000, 1100, 1050, 1200, 1150, 1300, 1250, 1400, 1350, 1500],
-    }
-
-    return pd.DataFrame(data, index=dates)
