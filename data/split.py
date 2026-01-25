@@ -24,20 +24,19 @@ class DataSplitter:
                 f"window_size {self.window_size} and horizon {self.horizon}."
             )
 
-        print(unique_dates)
-        return 0, 0
+        possible_iterations = len(unique_dates) - self.horizon - self.window_size + 1
 
-dates = pd.to_datetime(pd.date_range(start='2023-01-01', periods=10))
-tickers = ['AAPL', 'MSFT', 'GOOG']
+        iterations = min(self.iterations, possible_iterations)
 
-midx = pd.MultiIndex.from_product([dates, tickers], names=['date', 'ticker'])
-np.random.seed(42)
-test_df = pd.DataFrame(
-    np.random.rand(30, 2),
-    index=midx,
-    columns=['Close', 'Feature1']
-)
+        splits = []
 
-splitter = DataSplitter(3,2, 3)
-train_split, test_split = splitter.split(test_df)
+        for i in range(iterations):
+            train_split = unique_dates[i: i+self.window_size]
+            test_split = unique_dates[i + self.window_size : i + self.window_size + self.horizon]
+            train = data.loc[data.index.get_level_values('date').isin(train_split)]
+            test = data.loc[data.index.get_level_values('date').isin(test_split)]
+            splits.append((train, test))
+
+        return splits
+
 
