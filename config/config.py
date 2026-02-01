@@ -19,4 +19,6 @@ END_DATE = date.today()
 RAW_DATA_PATH = '../data/raw/'
 PROCESSED_DATA_PATH = '../data/processed/'
 
+OUTPUT_PATH = '../data/datasets'
+
 INTERVAL = '1d'
