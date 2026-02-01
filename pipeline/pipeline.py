@@ -57,6 +57,7 @@ class MarketDataPipeline:
         self.logger.info(f"Splitting data into {self.iterations} iterations...")
         splitter = DataSplitter(iterations=self.iterations)
         splits = splitter.split(labeled_df)
+        splitter.save_splits(splits)
         self.logger.info(f"Created {len(splits)} train/test splits.")
         return splits
 
@@ -64,7 +65,6 @@ class MarketDataPipeline:
         raw_data = self.fetch_and_save()
         labeled_df = self.process_features_and_labels(raw_data)
         splits = self.split_data(labeled_df)
-        print(splits)
         return labeled_df, splits
 
 
