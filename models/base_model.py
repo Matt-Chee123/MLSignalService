@@ -14,3 +14,13 @@ class BaseModel(ABC):
         if self.model is None:
             self.create_model()
         return self.model
+
+    def fit(self, X, y):
+        if self.model is None:
+            self.create_model()
+        self.model.fit(X, y)
+
+    def predict(self, X):
+        if self.model is None:
+            self.create_model()
+        return self.model.predict(X)

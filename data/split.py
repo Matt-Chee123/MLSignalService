@@ -1,5 +1,5 @@
 import pandas as pd
-import math
+import numpy as np
 from datetime import datetime
 from pathlib import Path
 
@@ -20,31 +20,30 @@ class DataSplitter:
 
         data = data.sort_index()
         dates = data.index.get_level_values("Date").unique().sort_values()
-
         if len(dates) < self.window_size + self.horizon:
             raise ValueError(
                 f"Not enough data: {len(dates)} dates, need {self.window_size + self.horizon}"
             )
 
         max_possible_splits = len(dates) - self.window_size - self.horizon
-        if self.iterations > 1:
-            step_size = math.floor(max_possible_splits / (self.iterations - 1))
+        if max_possible_splits < 0:
+            raise ValueError("Not enough data for one split")
+        if self.iterations == 1:
+            start_indices = [max_possible_splits]
         else:
-            step_size = max_possible_splits
-
+            start_indices = np.linspace(
+                0,
+                max_possible_splits,
+                num=self.iterations,
+                dtype=int
+            )
         splits = []
-
-        for i in range(self.iterations):
-            start_idx = i * step_size
-            if start_idx + self.window_size + self.horizon > len(dates):
-                break
-
+        for start_idx in start_indices:
             train_start = dates[start_idx]
             train_end = dates[start_idx + self.window_size - 1]
 
             test_start = dates[start_idx + self.window_size]
             test_end = dates[start_idx + self.window_size + self.horizon - 1]
-
             train = data.loc[(slice(train_start, train_end), slice(None))]
             test = data.loc[(slice(test_start, test_end), slice(None))]
 
@@ -81,3 +80,4 @@ class DataSplitter:
         pd.DataFrame(metadata).to_parquet(metadata_file, index=False)
 
         print(f"Saved {len(splits)} splits to {output_dir}")
+

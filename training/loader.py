@@ -19,4 +19,3 @@ def load_metadata(data_path):
     mdata_file = data_dir / "splits_metadata.parquet"
     return pd.read_parquet(mdata_file)
 
-load_splits('../data/datasets/run_20260202_190702')

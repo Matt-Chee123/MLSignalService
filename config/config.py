@@ -22,3 +22,20 @@ PROCESSED_DATA_PATH = '../data/processed/'
 OUTPUT_PATH = '../data/datasets'
 
 INTERVAL = '1d'
+
+TRAINING_CONFIG = {
+    "experiment_name": "rf_signal_v1",
+    "data": {
+        "dataset_path": "../data/datasets/run_20260202_190702"
+    },
+    "model": {
+        "model_type": "random_forest",
+        "hyperparams": {
+            "n_estimators": 200,
+            "max_depth": 6
+        }
+    },
+    "training": {
+        "output_dir": "./artifacts"
+    }
+}

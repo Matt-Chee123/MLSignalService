@@ -1,7 +1,7 @@
 from .sklearn_models import RandomForestModel, GradientBoostingModel
 
 def get_model_from_config(model_config):
-    model_type = model_config.get('type').lower()
+    model_type = model_config.get('model_type').lower()
     hyperparams = model_config.get('hyperparams', {})
 
     if model_type == 'random_forest':

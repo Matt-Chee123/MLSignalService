@@ -5,3 +5,4 @@ pyvenv.cfg
 /data/datasets
 /data/raw
 /data/processed
+/training/artifacts

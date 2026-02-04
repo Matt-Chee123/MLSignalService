@@ -45,12 +45,10 @@ class MarketDataPipeline:
         self.logger.info("Building features...")
         feature_engineer = FeatureEngineer()
         feature_df = feature_engineer.build_features(clean_data)
-
         self.logger.info("Adding labels...")
         label_gen = LabelGenerator()
         labeled_df = label_gen.add_labels(feature_df)
         labeled_df = labeled_df.dropna(subset=['label'])
-
         return labeled_df
 
     def split_data(self, labeled_df: pd.DataFrame):
