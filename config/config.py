@@ -37,5 +37,10 @@ TRAINING_CONFIG = {
     },
     "training": {
         "output_dir": "./artifacts"
-    }
+    },
+    "metrics": [
+        "mse",
+        "r2",
+        "rank_ic"
+    ]
 }

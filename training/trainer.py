@@ -17,11 +17,5 @@ class Trainer:
     def predict(self, X_test):
         return self.model.predict(X_test)
 
-    def evaluate(self, X_test, y_test):
-        y_preds = self.predict(X_test)
-        mse = mean_squared_error(y_test, y_preds)
-        r2 = r2_score(y_test, y_preds)
-        return {'mse': mse, 'r2': r2}
-
     def save_model(self, name='model.pkl'):
         joblib.dump(self.model, self.output_dir / name)
