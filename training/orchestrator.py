@@ -120,7 +120,6 @@ class TrainingOrchestrator:
             model = Trainer(self.model_config, self.models_dir)
             X_train, y_train = train.drop(columns="label"), train["label"]
             X_test, y_test = test.drop(columns="label"), test["label"]
-            print(X_train)
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
 
@@ -140,4 +139,8 @@ class TrainingOrchestrator:
 
 orch = TrainingOrchestrator(TRAINING_CONFIG)
 orch.load_data()
+print("Rank cross val:")
+orch.run_cross_validation()
+
+print("Shuffle Test:")
 orch.run_shuffle_test()

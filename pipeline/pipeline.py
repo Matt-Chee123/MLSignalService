@@ -65,6 +65,5 @@ class MarketDataPipeline:
         splits = self.split_data(labeled_df)
         return labeled_df, splits
 
-
 pipeline = MarketDataPipeline()
 pipeline.run()
