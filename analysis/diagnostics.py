@@ -4,6 +4,8 @@ from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from scipy import stats as sp_stats
 
+from training.metrics import cumulative_return, max_drawdown
+
 
 @dataclass
 class RegimeAnalysis:
@@ -180,3 +182,40 @@ class RegimeAnalyser:
 
         for idx, ((train, test), result) in enumerate(zip(self.splits, self.splits_results.to_dict('records'))):
             test_dates = test.index.get_level_values('Date')
+            test_start = test_dates.min()
+            test_end = test_dates.max()
+
+            test_returns = test.groupby(level='Date')['Close'].mean().pct_change()
+            vol = test_returns.std() * np.sqrt(252)
+
+            cumulative_return = (1 + test_returns).prod() - 1
+
+            up_days = (test_returns > 0) .sum()
+            down_days = (test_returns < 0).sum()
+            up_down_ratio = up_days / down_days if down_days > 0 else np.inf
+
+            cumulative = (1 + test_returns).prod()
+            running_max = cumulative.expanding().max()
+            drawdown = (cumulative - running_max) / running_max
+            max_drawdown = drawdown.min()
+
+            regime_data.append({
+                'split': idx,
+                'rank_ic': result['rank_ic'],
+                'r2': result.get('r2', np.nan),
+                'mse': result.get('mse', np.nan),
+                'test_start': test_start,
+                'test_end': test_end,
+                'num_days': len(test_returns),
+                'market_return': test_returns.mean(),
+                'market_volatility': vol,
+                'cumulative_return': cumulative_return,
+                'up_days': up_days,
+                'down_days': down_days,
+                'up_down_ratio': up_down_ratio,
+                'max_drawdown': max_drawdown,
+                'mean_abs_return': test_returns.abs().mean()
+            })
+
+    def analyse_regime_dependency(self):
+        regime_df = self.extract_regime_features()
