@@ -1,5 +1,4 @@
 from models.model_factory import get_model_from_config
-from sklearn.metrics import mean_squared_error, r2_score
 import joblib
 from pathlib import Path
 

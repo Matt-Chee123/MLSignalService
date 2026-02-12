@@ -11,10 +11,9 @@ from training.loader import load_splits, load_metadata
 from training.trainer import Trainer
 from training.evaluator import Evaluator
 from training import metrics as metric_lib
-from models.model_factory import get_model_from_config
 from config.config import TRAINING_CONFIG
-from analysis.validators import StatisticalValidator, ValidationResults, RegimeAnalyser
-from analysis.diagnostics import ModelDiagnostics
+from analysis.validators import StatisticalValidator, ValidationResults
+from analysis.diagnostics import ModelDiagnostics, RegimeAnalyser
 
 class TrainingOrchestrator:
     def __init__(self, config):
@@ -115,6 +114,8 @@ class TrainingOrchestrator:
             self.logger.info(f"Split {idx} | {metrics}")
         self.shuffle_metrics = self.evaluator.evaluate_all_splits(self.shuffle_results)
         self.logger.info(f"Summary metrics: {self.shuffle_metrics}")
+        pd.DataFrame(self.shuffle_results).to_csv(self.metrics_dir / "shuffle_metrics.csv", index=False)
+
 
     def run_cross_validation(self):
         self.split_results = []
@@ -136,12 +137,17 @@ class TrainingOrchestrator:
                 **metrics
             })
             self.logger.info(f"Split {idx} | {metrics}")
-        self.summary_metrics = self.evaluator.evaluate_all_splits(self.split_results)
-        self.logger.info(f"Summary metrics: {self.summary_metrics}")
+        self.split_metrics = self.evaluator.evaluate_all_splits(self.split_results)
+        self.logger.info(f"Summary metrics: {self.split_metrics}")
+        pd.DataFrame(self.split_results).to_csv(self.metrics_dir / "split_metrics.csv", index=False)
+
+
+    def run_pipeline(self):
+        self.load_data()
+        self.run_cross_validation()
+        self.run_shuffle_test()
+        validation = self.evaluator.pass_validation(self.split_metrics, self.shuffle_metrics)
+        print(validation)
 
 orch = TrainingOrchestrator(TRAINING_CONFIG)
-orch.load_data()
-orch.run_cross_validation()
-orch.run_shuffle_test()
-val = RegimeAnalyser(orch.split_results['split'], orch.split_results)
-val.print_regime_report()
+orch.run_pipeline()
