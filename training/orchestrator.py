@@ -13,7 +13,7 @@ from training.evaluator import Evaluator
 from training import metrics as metric_lib
 from models.model_factory import get_model_from_config
 from config.config import TRAINING_CONFIG
-from analysis.validators import StatisticalValidator, ValidationResults
+from analysis.validators import StatisticalValidator, ValidationResults, RegimeAnalyser
 from analysis.diagnostics import ModelDiagnostics
 
 class TrainingOrchestrator:
@@ -143,5 +143,5 @@ orch = TrainingOrchestrator(TRAINING_CONFIG)
 orch.load_data()
 orch.run_cross_validation()
 orch.run_shuffle_test()
-val = ModelDiagnostics(orch.split_results, orch.shuffle_results)
-val.print_diagnostic_report()
+val = RegimeAnalyser(orch.split_results['split'], orch.split_results)
+val.print_regime_report()

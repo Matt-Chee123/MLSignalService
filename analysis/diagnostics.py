@@ -217,5 +217,80 @@ class RegimeAnalyser:
                 'mean_abs_return': test_returns.abs().mean()
             })
 
-    def analyse_regime_dependency(self):
+    def analyse_regime_dependency(self, ic_threshold = 0.3):
         regime_df = self.extract_regime_features()
+
+        feature_cols = ['market_return', 'market_volatility', 'cumulative_return',
+                        'up_down_ratio', 'max_drawdown', 'mean_abs_return']
+
+        correlations = regime_df[feature_cols + ['rank_ic']].corr()['rank_ic'].drop('rank_ic')
+
+        good_regimes = regime_df[regime_df['rank_ic'] > ic_threshold]
+        bad_regimes = regime_df[regime_df['rank_ic'] < ic_threshold]
+
+        good_chars = {
+            'count': len(good_regimes),
+            'mean_volatility': good_regimes['market_volatility'].mean(),
+            'mean_return': good_regimes['market_return'].mean(),
+            'mean_up_down_ratio': good_regimes['up_down_ratio'].mean(),
+            'mean_drawdown': good_regimes['max_drawdown'].mean()
+        }
+
+        bad_chars = {
+            'count': len(bad_regimes),
+            'mean_volatility': bad_regimes['market_volatility'].mean(),
+            'mean_return': bad_regimes['market_return'].mean(),
+            'mean_up_down_ratio': bad_regimes['up_down_ratio'].mean(),
+            'mean_drawdown': bad_regimes['max_drawdown'].mean()
+        }
+
+        return RegimeAnalysis(
+            regime_df=regime_df,
+            correlations=correlations,
+            good_regime_characteristics=good_chars,
+            bad_regime_characteristics=bad_chars
+        )
+
+    def print_regime_report(self, ic_threshold: float = 0.3):
+        analysis = self.analyse_regime_dependency(ic_threshold)
+
+        print("=" * 70)
+        print("REGIME DEPENDENCY ANALYSIS")
+        print("=" * 70)
+
+        print(f"\n📊 REGIME CORRELATIONS WITH RANK IC")
+        for feature, corr in analysis.correlations.items():
+            emoji = "📈" if corr > 0.3 else "📉" if corr < -0.3 else "➡️ "
+            print(f"   {emoji} {feature:25s}: {corr:>7.4f}")
+
+        print(f"\n✅ GOOD PERFORMANCE REGIMES (IC > {ic_threshold})")
+        print(f"   Count:           {analysis.good_regime_characteristics['count']} splits")
+        print(f"   Avg Volatility:  {analysis.good_regime_characteristics['mean_volatility']:.4f}")
+        print(f"   Avg Return:      {analysis.good_regime_characteristics['mean_return']:.6f}")
+        print(f"   Up/Down Ratio:   {analysis.good_regime_characteristics['mean_up_down_ratio']:.2f}")
+        print(f"   Avg Drawdown:    {analysis.good_regime_characteristics['mean_drawdown']:.4f}")
+
+        print(f"\n❌ POOR PERFORMANCE REGIMES (IC < {ic_threshold})")
+        print(f"   Count:           {analysis.bad_regime_characteristics['count']} splits")
+        print(f"   Avg Volatility:  {analysis.bad_regime_characteristics['mean_volatility']:.4f}")
+        print(f"   Avg Return:      {analysis.bad_regime_characteristics['mean_return']:.6f}")
+        print(f"   Up/Down Ratio:   {analysis.bad_regime_characteristics['mean_up_down_ratio']:.2f}")
+        print(f"   Avg Drawdown:    {analysis.bad_regime_characteristics['mean_drawdown']:.4f}")
+
+        print(f"\n💡 INSIGHTS")
+
+        vol_diff = analysis.good_regime_characteristics['mean_volatility'] - analysis.bad_regime_characteristics[
+            'mean_volatility']
+        if abs(vol_diff) > 0.05:
+            if vol_diff > 0:
+                print(f"   📈 Model performs better in HIGH volatility environments (+{vol_diff:.4f})")
+            else:
+                print(f"   📉 Model performs better in LOW volatility environments ({vol_diff:.4f})")
+
+        if abs(analysis.correlations['cumulative_return']) > 0.3:
+            if analysis.correlations['cumulative_return'] > 0:
+                print(f"   📈 Model performs better in UPTRENDING markets")
+            else:
+                print(f"   📉 Model performs better in DOWNTRENDING markets")
+
+        print("=" * 70)
