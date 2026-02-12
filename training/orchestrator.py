@@ -82,6 +82,8 @@ class TrainingOrchestrator:
     def load_data(self):
         self.splits = load_splits(self.data_config['dataset_path'])
         self.metadata = load_metadata(self.data_config['dataset_path'])
+        full_train = pd.concat([train for train, _ in self.splits], ignore_index=True)
+
 
     def run_shuffle_test(self):
         self.shuffle_results = []
@@ -141,13 +143,28 @@ class TrainingOrchestrator:
         self.logger.info(f"Summary metrics: {self.split_metrics}")
         pd.DataFrame(self.split_results).to_csv(self.metrics_dir / "split_metrics.csv", index=False)
 
+    def train_full_model(self):
+        if self.splits is None or len(self.splits) == 0:
+            return
+
+        full_train = pd.concat([train for train, _ in self.splits], ignore_index=True)
+
+        X_full = full_train.drop(columns=['label'])
+        y_full = full_train['label']
+
+        model = Trainer(self.model_config, self.models_dir)
+        self.logger.info("Training on full dataset")
+        model.fit(X_full, y_full)
+        model.save_model()
 
     def run_pipeline(self):
         self.load_data()
         self.run_cross_validation()
         self.run_shuffle_test()
         validation = self.evaluator.pass_validation(self.split_metrics, self.shuffle_metrics)
-        print(validation)
+
+        if validation:
+            self.train_full_model()
 
 orch = TrainingOrchestrator(TRAINING_CONFIG)
 orch.run_pipeline()

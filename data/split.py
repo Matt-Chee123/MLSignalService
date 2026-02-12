@@ -62,7 +62,7 @@ class DataSplitter:
         for idx, (train, test) in enumerate(splits, start=1):
             train_file = output_dir / f"train_split_{idx}.parquet"
             test_file = output_dir / f"test_split_{idx}.parquet"
-
+            print(train, test)
             train.to_parquet(train_file)
             test.to_parquet(test_file)
 
