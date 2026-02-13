@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from scipy import stats as sp_stats
 
 from training.metrics import cumulative_return, max_drawdown
-
+from training.loader import load_splits
 
 @dataclass
 class RegimeAnalysis:
@@ -81,7 +81,6 @@ class ModelDiagnostics:
 
         z_scores = np.abs((values - mean) / std)
         outliers = np.where(z_scores > threshold)[0]
-        print("Outliers:", outliers)
         return outliers
 
 
@@ -167,7 +166,7 @@ class ModelDiagnostics:
                 print(f"      Δ:       {values['difference']:.4f} (Effect size: {values['effect_size']:.2f})")
 
         outliers = self.identify_outlier_splits()
-        if outliers:
+        if len(outliers) > 0:
             print(f"\n⚠️  OUTLIER SPLITS (>2σ from mean): {outliers}")
 
         print("=" * 70)
@@ -179,13 +178,12 @@ class RegimeAnalyser:
 
     def extract_regime_features(self):
         regime_data = []
-
         for idx, ((train, test), result) in enumerate(zip(self.splits, self.splits_results.to_dict('records'))):
             test_dates = test.index.get_level_values('Date')
             test_start = test_dates.min()
             test_end = test_dates.max()
 
-            test_returns = test.groupby(level='Date')['Close'].mean().pct_change()
+            test_returns = test.groupby(level='Date')['Close'].mean().pct_change().dropna()
             vol = test_returns.std() * np.sqrt(252)
 
             cumulative_return = (1 + test_returns).prod() - 1
@@ -194,9 +192,9 @@ class RegimeAnalyser:
             down_days = (test_returns < 0).sum()
             up_down_ratio = up_days / down_days if down_days > 0 else np.inf
 
-            cumulative = (1 + test_returns).prod()
-            running_max = cumulative.expanding().max()
-            drawdown = (cumulative - running_max) / running_max
+            equity_curve = (1 + test_returns).cumprod()
+            running_max = equity_curve.cummax()
+            drawdown = (equity_curve - running_max) / running_max
             max_drawdown = drawdown.min()
 
             regime_data.append({
@@ -216,6 +214,7 @@ class RegimeAnalyser:
                 'max_drawdown': max_drawdown,
                 'mean_abs_return': test_returns.abs().mean()
             })
+        return pd.DataFrame(regime_data)
 
     def analyse_regime_dependency(self, ic_threshold = 0.3):
         regime_df = self.extract_regime_features()
@@ -294,3 +293,10 @@ class RegimeAnalyser:
                 print(f"   📉 Model performs better in DOWNTRENDING markets")
 
         print("=" * 70)
+
+split_results = pd.read_csv('../training/artifacts/rf_signal_v1/20260213_175247/metrics/split_metrics.csv')
+shuffle_results = pd.read_csv('../training/artifacts/rf_signal_v1/20260213_175247/metrics/shuffle_metrics.csv')
+splits = load_splits('../data/datasets/run_20260212_210236')
+
+test2 = RegimeAnalyser(splits,split_results)
+test2.print_regime_report()

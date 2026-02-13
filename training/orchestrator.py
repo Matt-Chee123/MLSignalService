@@ -38,6 +38,7 @@ class TrainingOrchestrator:
         self.models_dir = self.run_dir / "models"
         self.metrics_dir = self.run_dir / "metrics"
         self.logs_dir = self.run_dir / "logs"
+        self.train_dir = self.run_dir / "train_data"
 
         for d in [self.run_dir, self.models_dir, self.metrics_dir, self.logs_dir]:
             d.mkdir(parents=True, exist_ok=True)
@@ -82,7 +83,6 @@ class TrainingOrchestrator:
     def load_data(self):
         self.splits = load_splits(self.data_config['dataset_path'])
         self.metadata = load_metadata(self.data_config['dataset_path'])
-        full_train = pd.concat([train for train, _ in self.splits], ignore_index=True)
 
 
     def run_shuffle_test(self):
