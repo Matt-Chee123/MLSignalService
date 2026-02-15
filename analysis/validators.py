@@ -28,20 +28,30 @@ class ValidationResults:
         return self.vs_shuffle_p_value < alpha
 
     def to_dict(self) -> Dict:
+        def _py(v):
+
+            if isinstance(v, (np.floating,)):
+                return float(v)
+            if isinstance(v, (np.integer,)):
+                return int(v)
+            if isinstance(v, (np.bool_,)):
+                return bool(v)
+            return v
+
         return {
-            'ic_mean': self.ic_mean,
-            'ic_std': self.ic_std,
-            'ic_median': self.ic_median,
-            'information_ratio': self.information_ratio,
-            't_statistic': self.t_statistic,
-            'p_value': self.p_value,
-            'ci_lower': self.confidence_interval_95[0],
-            'ci_upper': self.confidence_interval_95[1],
-            'positive_split_ratio': self.positive_split_ratio,
-            'vs_shuffle_t_stat': self.vs_shuffle_t_stat,
-            'vs_shuffle_p_value': self.vs_shuffle_p_value,
-            'is_significant': self.is_significant(),
-            'beats_random': self.beats_random()
+            'ic_mean': _py(self.ic_mean),
+            'ic_std': _py(self.ic_std),
+            'ic_median': _py(self.ic_median),
+            'information_ratio': _py(self.information_ratio),
+            't_statistic': _py(self.t_statistic),
+            'p_value': _py(self.p_value),
+            'ci_lower': _py(self.confidence_interval_95[0]),
+            'ci_upper': _py(self.confidence_interval_95[1]),
+            'positive_split_ratio': _py(self.positive_split_ratio),
+            'vs_shuffle_t_stat': _py(self.vs_shuffle_t_stat) if self.vs_shuffle_t_stat is not None else None,
+            'vs_shuffle_p_value': _py(self.vs_shuffle_p_value) if self.vs_shuffle_p_value is not None else None,
+            'is_significant': bool(self.is_significant()),
+            'beats_random': bool(self.beats_random())
         }
 
 
@@ -92,7 +102,6 @@ class StatisticalValidator:
 
     def validate_all_metrics(self) -> Dict[str, ValidationResults]:
         results = {}
-
         for metric in ['rank_ic', 'r2', 'mse']:
             if metric in self.split_results.columns:
                 if metric == 'mse':
@@ -237,7 +246,6 @@ class StatisticalValidator:
     def export_results(self, filepath: str):
 
         results = self.validate_all_metrics()
-
         output = {
             metric: result.to_dict()
             for metric, result in results.items()
@@ -247,3 +255,4 @@ class StatisticalValidator:
             json.dump(output, f, indent=2)
 
         print(f"Results exported to {filepath}")
+

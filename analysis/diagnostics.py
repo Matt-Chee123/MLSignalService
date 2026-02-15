@@ -174,7 +174,10 @@ class ModelDiagnostics:
 class RegimeAnalyser:
     def __init__(self, splits, splits_results):
         self.splits = splits
-        self.splits_results = splits_results
+        if isinstance(splits_results, list):
+            self.splits_results = pd.DataFrame(splits_results)
+        else:
+            self.splits_results = splits_results
 
     def extract_regime_features(self):
         regime_data = []

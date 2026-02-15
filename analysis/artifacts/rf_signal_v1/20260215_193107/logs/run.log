@@ -1,2 +1,0 @@
-2026-02-15 19:31:07,731 | INFO | rf_signal_v1 | Initialized TrainingOrchestrator | Experiment=rf_signal_v1 | Run=20260215_193107
-2026-02-15 19:31:14,667 | INFO | rf_signal_v1 | Split 0 | {'mse': 0.06905750873888968, 'r2': 0.15815608394496394, 'rank_ic': np.float64(0.36132376168349906)}

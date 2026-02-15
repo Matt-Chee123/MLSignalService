@@ -27,7 +27,6 @@ class AnalysisOrchestrator:
             split_results=self.trainer.split_results,
             shuffle_results=self.trainer.shuffle_results if hasattr(self.trainer, 'shuffle_results') else None
         )
-
         validator.print_validation_report(metric='rank_ic')
 
         export_path = self.analysis_dir / "validation_results.json"
@@ -79,10 +78,7 @@ class AnalysisOrchestrator:
         print("RUNNING REGIME ANALYSIS")
         print("="*70)
 
-        regime_analyzer = RegimeAnalyser(
-            splits=self.trainer.splits,
-            split_results=self.trainer.split_results
-        )
+        regime_analyzer = RegimeAnalyser(self.trainer.splits,self.trainer.split_results)
 
         regime_analyzer.print_regime_report(ic_threshold=0.3)
 
@@ -169,5 +165,7 @@ if __name__ == "__main__":
 
     analyzer = AnalysisOrchestrator(trainer)
     results = analyzer.run_full_analysis()
+
+    trainer.train_full_model()
 
     print("\n✅ Done! Check the output directory for all results and plots.")

@@ -36,7 +36,7 @@ TRAINING_CONFIG = {
         }
     },
     "training": {
-        "output_dir": "./artifacts"
+        "output_dir": "../training/artifacts"
     },
     "metrics": [
         "mse",
