@@ -26,7 +26,7 @@ INTERVAL = '1d'
 TRAINING_CONFIG = {
     "experiment_name": "rf_signal_v1",
     "data": {
-        "dataset_path": "../data/datasets/run_20260212_210236"
+        "dataset_path": "../data/datasets/run_20260215_192421"
     },
     "model": {
         "model_type": "random_forest",

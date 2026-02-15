@@ -166,5 +166,3 @@ class TrainingOrchestrator:
         if validation:
             self.train_full_model()
 
-orch = TrainingOrchestrator(TRAINING_CONFIG)
-orch.run_pipeline()

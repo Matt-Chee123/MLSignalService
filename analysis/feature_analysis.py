@@ -278,30 +278,3 @@ class FeatureSelector:
             return spearmanr(predictions, y)[0]
         else:
             raise ValueError(f"Unknown metric: {metric}")
-
-model = joblib.load('../training/artifacts/rf_signal_v1/20260213_175247/models/model.pkl')
-splits = load_splits('../data/datasets/run_20260212_210236')
-
-for idx, (train, test) in enumerate(splits):
-    X_train, y_train = train.drop(columns='label'), train['label']
-    X_test, y_test = test.drop(columns='label'), test['label']
-
-    print("Run: ", idx)
-    selector = FeatureSelector(
-        X_train=X_train.values,
-        y_train=y_train.values,
-        X_test=X_test.values,
-        y_test=y_test.values,
-        feature_names=X_train.columns.tolist()
-    )
-    selected_features = selector.backward_elimination(
-        lambda: RandomForestRegressor(n_estimators=200, random_state=42),
-        min_features=20,
-        metric="rank_ic"
-    )
-
-    print(selected_features)
-
-
-    print(f"\n=== Split {idx} ===")
-    analyser.print_importance_report(top_n=10)

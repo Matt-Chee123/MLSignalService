@@ -293,10 +293,3 @@ class RegimeAnalyser:
                 print(f"   📉 Model performs better in DOWNTRENDING markets")
 
         print("=" * 70)
-
-split_results = pd.read_csv('../training/artifacts/rf_signal_v1/20260213_175247/metrics/split_metrics.csv')
-shuffle_results = pd.read_csv('../training/artifacts/rf_signal_v1/20260213_175247/metrics/shuffle_metrics.csv')
-splits = load_splits('../data/datasets/run_20260212_210236')
-
-test2 = RegimeAnalyser(splits,split_results)
-test2.print_regime_report()
