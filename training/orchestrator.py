@@ -61,18 +61,20 @@ class TrainingOrchestrator:
         logger = logging.getLogger(self.experiment_name)
         logger.setLevel(logging.INFO)
 
-        formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-        )
+        if not logger.handlers:
+            formatter = logging.Formatter(
+                "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+            )
 
-        fh = logging.FileHandler(self.logs_dir / "run.log")
-        fh.setFormatter(formatter)
+            fh = logging.FileHandler(self.logs_dir / "run.log")
+            fh.setFormatter(formatter)
 
-        sh = logging.StreamHandler()
-        sh.setFormatter(formatter)
+            sh = logging.StreamHandler()
+            sh.setFormatter(formatter)
 
-        logger.addHandler(fh)
-        logger.addHandler(sh)
+            logger.addHandler(fh)
+            logger.addHandler(sh)
+            logger.propagate = False
 
         return logger
 
@@ -80,9 +82,9 @@ class TrainingOrchestrator:
         with open(self.run_dir / "config.json", "w") as f:
             json.dump(self.config, f, indent=4)
 
-    def load_data(self):
-        self.splits = load_splits(self.data_config['dataset_path'])
-        self.metadata = load_metadata(self.data_config['dataset_path'])
+    def load_data(self, data_dir):
+        self.splits = load_splits(data_dir)
+        self.metadata = load_metadata(data_dir)
 
 
     def run_shuffle_test(self):
@@ -157,8 +159,8 @@ class TrainingOrchestrator:
         model.fit(X_full, y_full)
         model.save_model()
 
-    def run_pipeline(self):
-        self.load_data()
+    def run_pipeline(self,data_dir):
+        self.load_data(data_dir)
         self.run_cross_validation()
         self.run_shuffle_test()
         validation = self.evaluator.pass_validation(self.split_metrics, self.shuffle_metrics)

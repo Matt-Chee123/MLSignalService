@@ -81,3 +81,5 @@ class DataSplitter:
 
         print(f"Saved {len(splits)} splits to {output_dir}")
 
+        return output_dir
+

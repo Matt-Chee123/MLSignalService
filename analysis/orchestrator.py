@@ -147,25 +147,3 @@ class AnalysisOrchestrator:
 
         return results
 
-
-if __name__ == "__main__":
-    print("Initializing training orchestrator...")
-    trainer = TrainingOrchestrator(TRAINING_CONFIG)
-    trainer.load_data()
-
-    print("\nRunning cross-validation...")
-    trainer.run_cross_validation()
-
-    print("\nRunning shuffle test...")
-    trainer.run_shuffle_test()
-
-    print("\n" + "=" * 70)
-    print("STARTING ANALYSIS PHASE")
-    print("=" * 70)
-
-    analyzer = AnalysisOrchestrator(trainer)
-    results = analyzer.run_full_analysis()
-
-    trainer.train_full_model()
-
-    print("\n✅ Done! Check the output directory for all results and plots.")
