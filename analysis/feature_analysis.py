@@ -6,6 +6,8 @@ from sklearn.inspection import permutation_importance
 import pickle
 from training.loader import load_splits
 import joblib
+from scipy.stats import spearmanr
+
 
 class FeatureAnalyser:
     def __init__(self, model, feature_names, X_train, y_train, X_test, y_test):
@@ -165,6 +167,118 @@ class FeatureAnalyser:
 
         print("=" * 70)
 
+
+class FeatureSelector:
+
+    def __init__(self, X_train, y_train, X_test, y_test, feature_names: List[str]):
+
+        self.X_train = X_train
+        self.y_train = y_train
+        self.X_test = X_test
+        self.y_test = y_test
+        self.feature_names = feature_names
+
+    def forward_selection(self, model_class, max_features: int = 50, metric: str = 'r2') -> List[str]:
+
+        selected_features = []
+        remaining_features = self.feature_names.copy()
+
+        best_score = -np.inf if metric in ['r2', 'rank_ic'] else np.inf
+
+        for _ in range(min(max_features, len(self.feature_names))):
+            scores = []
+
+            for feature in remaining_features:
+                test_features = selected_features + [feature]
+                test_indices = [self.feature_names.index(f) for f in test_features]
+
+                X_train_subset = self.X_train[:, test_indices]
+                X_test_subset = self.X_test[:, test_indices]
+
+                model = model_class()
+                model.fit(X_train_subset, self.y_train)
+
+                score = self._evaluate_model(model, X_test_subset, self.y_test, metric)
+                scores.append(score)
+
+            if metric in ['r2', 'rank_ic']:
+                best_idx = np.argmax(scores)
+                new_score = scores[best_idx]
+                improved = new_score > best_score
+            else:
+                best_idx = np.argmin(scores)
+                new_score = scores[best_idx]
+                improved = new_score < best_score
+
+            if improved:
+                best_feature = remaining_features[best_idx]
+                selected_features.append(best_feature)
+                remaining_features.remove(best_feature)
+                best_score = new_score
+
+                print(f"Added {best_feature}: {metric} = {new_score:.4f}")
+            else:
+                print(f"No improvement. Stopping at {len(selected_features)} features.")
+                break
+
+        return selected_features
+
+    def backward_elimination(self, model_class, min_features: int = 10, metric: str = 'r2') -> List[str]:
+
+        remaining_features = self.feature_names.copy()
+
+        model = model_class()
+        model.fit(self.X_train, self.y_train)
+        best_score = self._evaluate_model(model, self.X_test, self.y_test, metric)
+        print("ehre")
+        while len(remaining_features) > min_features:
+            scores = []
+
+            for feature in remaining_features:
+                test_features = [f for f in remaining_features if f != feature]
+                test_indices = [self.feature_names.index(f) for f in test_features]
+
+                X_train_subset = self.X_train[:, test_indices]
+                X_test_subset = self.X_test[:, test_indices]
+
+                model = model_class()
+                model.fit(X_train_subset, self.y_train)
+
+                score = self._evaluate_model(model, X_test_subset, self.y_test, metric)
+                scores.append((feature, score))
+
+            if metric in ['r2', 'rank_ic']:
+                best_removal = max(scores, key=lambda x: x[1])
+                improved = best_removal[1] >= best_score
+            else:
+                best_removal = min(scores, key=lambda x: x[1])
+                improved = best_removal[1] <= best_score
+
+            if improved or best_removal[1] >= best_score * 0.99:
+                removed_feature = best_removal[0]
+                remaining_features.remove(removed_feature)
+                best_score = best_removal[1]
+
+                print(f"Removed {removed_feature}: {metric} = {best_score:.4f}")
+            else:
+                print("Cannot remove more features without significant degradation.")
+                break
+
+        return remaining_features
+
+    def _evaluate_model(self, model, X, y, metric: str) -> float:
+
+        predictions = model.predict(X)
+
+        if metric == 'r2':
+            return model.score(X, y)
+        elif metric == 'mse':
+            return np.mean((predictions - y) ** 2)
+        elif metric == 'rank_ic':
+            return spearmanr(predictions, y)[0]
+        else:
+            raise ValueError(f"Unknown metric: {metric}")
+
 model = joblib.load('../training/artifacts/rf_signal_v1/20260213_175247/models/model.pkl')
 splits = load_splits('../data/datasets/run_20260212_210236')
 
@@ -172,14 +286,22 @@ for idx, (train, test) in enumerate(splits):
     X_train, y_train = train.drop(columns='label'), train['label']
     X_test, y_test = test.drop(columns='label'), test['label']
 
-    analyser = FeatureAnalyser(
-        model=model.model,
-        feature_names=X_train.columns.tolist(),
+    print("Run: ", idx)
+    selector = FeatureSelector(
         X_train=X_train.values,
         y_train=y_train.values,
         X_test=X_test.values,
-        y_test=y_test.values
+        y_test=y_test.values,
+        feature_names=X_train.columns.tolist()
     )
+    selected_features = selector.backward_elimination(
+        lambda: RandomForestRegressor(n_estimators=200, random_state=42),
+        min_features=20,
+        metric="rank_ic"
+    )
+
+    print(selected_features)
+
 
     print(f"\n=== Split {idx} ===")
     analyser.print_importance_report(top_n=10)
