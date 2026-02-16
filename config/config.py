@@ -1,5 +1,6 @@
-import datetime
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
+from pathlib import Path
+
 
 TICKERS = [
     'PG',    # Procter & Gamble
@@ -16,10 +17,13 @@ TICKERS = [
 START_DATE = date.today() - timedelta(days=5*365)
 END_DATE = date.today()
 
-RAW_DATA_PATH = '../data/raw/'
-PROCESSED_DATA_PATH = '../data/processed/'
+RAW_DATA_PATH = Path('../data/raw/')
+PROCESSED_DATA_PATH = Path('../data/processed/')
+SPLIT_DATA_PATH = Path('../data/datasets/')
 
 OUTPUT_PATH = '../data/datasets'
+
+RUN_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 INTERVAL = '1d'
 

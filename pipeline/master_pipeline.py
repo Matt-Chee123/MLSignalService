@@ -13,6 +13,5 @@ def run_pipeline():
     analysis_pipeline = AnalysisOrchestrator(training_pipeline)
 
     analysis_pipeline.run_full_analysis()
-    training_pipeline.train_full_model()
 
 run_pipeline()

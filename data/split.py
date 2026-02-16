@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 class DataSplitter:
-    def __init__(self, window_size=2, horizon=3, iterations=15):
+    def __init__(self, window_size=2, horizon=3, iterations=15, output_path='.datasets'):
         self.window_size = window_size * 252
         self.horizon = horizon * 20
         self.iterations = iterations
@@ -51,11 +51,7 @@ class DataSplitter:
 
         return splits
 
-    def save_splits(self, splits, output_base_dir="../data/datasets/"):
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = Path(output_base_dir) / f"run_{timestamp}"
-        output_dir.mkdir(parents=True, exist_ok=True)
+    def save_splits(self, splits, output_dir="../data/datasets/"):
 
         metadata = []
 

@@ -1,7 +1,6 @@
 import logging
 import json
 from pathlib import Path
-from datetime import datetime
 from typing import Dict, List, Tuple, Any
 
 import pandas as pd
@@ -11,9 +10,7 @@ from training.loader import load_splits, load_metadata
 from training.trainer import Trainer
 from training.evaluator import Evaluator
 from training import metrics as metric_lib
-from config.config import TRAINING_CONFIG
-from analysis.validators import StatisticalValidator, ValidationResults
-from analysis.diagnostics import ModelDiagnostics, RegimeAnalyser
+from config.config import TRAINING_CONFIG, RUN_ID
 
 class TrainingOrchestrator:
     def __init__(self, config):
@@ -28,7 +25,7 @@ class TrainingOrchestrator:
             }
         )
 
-        self.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.run_id = RUN_ID
         self.experiment_name = config.get("experiment_name", "default_experiment")
 
         self.base_output_dir = Path(

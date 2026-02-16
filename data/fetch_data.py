@@ -62,7 +62,7 @@ def fetch_universe(
     return data
 
 
-def save_raw_data(
+def save_data(
     df: pd.DataFrame,
     output_path: str
 ) -> None:
