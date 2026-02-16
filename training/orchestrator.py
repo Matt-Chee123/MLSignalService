@@ -39,8 +39,9 @@ class TrainingOrchestrator:
         self.metrics_dir = self.run_dir / "metrics"
         self.logs_dir = self.run_dir / "logs"
         self.train_dir = self.run_dir / "train_data"
+        self.predictions_dir = self.run_dir / "predictions"
 
-        for d in [self.run_dir, self.models_dir, self.metrics_dir, self.logs_dir]:
+        for d in [self.run_dir, self.models_dir, self.metrics_dir, self.logs_dir, self.predictions_dir]:
             d.mkdir(parents=True, exist_ok=True)
 
         self.logger = self._init_logger()
@@ -122,6 +123,7 @@ class TrainingOrchestrator:
 
 
     def run_cross_validation(self):
+        all_predictions = []
         self.split_results = []
         for  idx, (train, test) in enumerate(self.splits):
             model = Trainer(self.model_config, self.models_dir)
@@ -140,10 +142,24 @@ class TrainingOrchestrator:
                 "split": idx,
                 **metrics
             })
+
+            df_preds = X_test.copy()
+            df_preds['pred_label'] = y_pred
+            df_preds['actual_label'] = y_test
+            df_preds['split'] = idx
+            all_predictions.append(df_preds)
+
             self.logger.info(f"Split {idx} | {metrics}")
         self.split_metrics = self.evaluator.evaluate_all_splits(self.split_results)
         self.logger.info(f"Summary metrics: {self.split_metrics}")
         pd.DataFrame(self.split_results).to_csv(self.metrics_dir / "split_metrics.csv", index=False)
+
+        flat_predictions = pd.concat(all_predictions).reset_index()
+        flat_predictions.rename(columns={'index': 'original_index'}, inplace=True)
+
+        predictions_dir = self.run_dir / "predictions"
+        predictions_dir.mkdir(exist_ok=True)
+        flat_predictions.to_csv(predictions_dir / "predictions.csv", index=False)
 
     def train_full_model(self):
         if self.splits is None or len(self.splits) == 0:
