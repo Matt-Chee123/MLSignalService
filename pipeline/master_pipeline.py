@@ -1,9 +1,11 @@
 from data_pipeline import MarketDataPipeline
 from analysis.orchestrator import AnalysisOrchestrator
 from training.orchestrator import TrainingOrchestrator
-from config.config import TRAINING_CONFIG
+from config.config import TRAINING_CONFIG, RUN_ID
+from analysis.tracking import ExperimentTracker
 
 def run_pipeline():
+
     data_pipeline = MarketDataPipeline()
     training_pipeline = TrainingOrchestrator(TRAINING_CONFIG)
 

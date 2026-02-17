@@ -11,6 +11,8 @@ from training.trainer import Trainer
 from training.evaluator import Evaluator
 from training import metrics as metric_lib
 from config.config import TRAINING_CONFIG, RUN_ID
+from analysis.tracking import ExperimentTracker
+
 
 class TrainingOrchestrator:
     def __init__(self, config):
@@ -18,12 +20,16 @@ class TrainingOrchestrator:
         self.model_config = config['model']
         self.data_config = config['data']
         self.training_config = config['training']
+        self.tracker = ExperimentTracker(run_id=RUN_ID)
+
         self.evaluator = Evaluator(
             metrics={
                 name: getattr(metric_lib, name)
                 for name in config.get("metrics", [])
             }
         )
+
+        self.experiment_id = self.tracker.start_experiment(self.config)
 
         self.run_id = RUN_ID
         self.experiment_name = config.get("experiment_name", "default_experiment")
@@ -109,6 +115,7 @@ class TrainingOrchestrator:
                 signal=y_pred,
                 future_returns=y_test
             )
+
             self.shuffle_results.append({
                 "split": idx,
                 **metrics
@@ -135,6 +142,15 @@ class TrainingOrchestrator:
                 signal=y_pred,
                 future_returns=y_test
             )
+
+            self.tracker.log_split_metrics(
+                self.experiment_id,
+                idx,
+                metrics.get("mse"),
+                metrics.get("r2"),
+                metrics.get("rank_ic"),
+            )
+
             self.split_results.append({
                 "split": idx,
                 **metrics
@@ -177,7 +193,24 @@ class TrainingOrchestrator:
         self.run_cross_validation()
         self.run_shuffle_test()
         validation = self.evaluator.pass_validation(self.split_metrics, self.shuffle_metrics)
-
+        summary_payload = {
+            "cv_summary": self.split_metrics,
+            "shuffle_summary": self.shuffle_metrics,
+            "passed_validation": json.loads(json.dumps(validation, default=float)),
+        }
+        self.tracker.log_summary(self.experiment_id, summary_payload)
         if validation:
             self.train_full_model()
+
+        model_path = str(self.models_dir)
+        predictions_path = str(self.predictions_dir)
+        metrics_path = str(self.metrics_dir)
+
+        self.tracker.log_artifacts(
+            self.experiment_id,
+            model_path=str(self.models_dir),
+            predictions_path=str(self.predictions_dir),
+            plots_path=str(self.metrics_dir),
+        )
+        self.tracker.close()
 

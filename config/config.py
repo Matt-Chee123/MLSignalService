@@ -35,7 +35,7 @@ TRAINING_CONFIG = {
     "model": {
         "model_type": "random_forest",
         "hyperparams": {
-            "n_estimators": 200,
+            "n_estimators": 250,
             "max_depth": 6
         }
     },

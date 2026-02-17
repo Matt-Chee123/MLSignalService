@@ -3,8 +3,8 @@ import pandas as pd
 from config.config import TICKERS, START_DATE, END_DATE, RAW_DATA_PATH, INTERVAL, PROCESSED_DATA_PATH, SPLIT_DATA_PATH, RUN_ID
 from data.fetch_data import fetch_universe, save_data
 from data.split import DataSplitter
-from features.feature_engineering import FeatureEngineer
-from labels.labels import LabelGenerator
+from data.features.feature_engineering import FeatureEngineer
+from data.labels.labels import LabelGenerator
 from data.clean import clean_market_data
 
 
