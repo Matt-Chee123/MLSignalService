@@ -20,6 +20,8 @@ class CompareModels:
 
         self.experiment_data = self.get_experiment_data(experiment_ids)
         self.metrics_data = self.get_metrics_data(experiment_ids)
+        self.summary_data = self.get_summary_data(experiment_ids)
+        self.artifacts_data = self.get_artifacts(experiment_ids)
 
     def _execute_in_clause(self, ids):
         placeholders = ",".join(["?"] * len(ids))
@@ -52,6 +54,27 @@ class CompareModels:
         self.cursor.execute(query, ids)
         return self.cursor.fetchall()
 
+    def get_summary_data(self, ids):
+        if not ids:
+            return []
+        placeholders = self._execute_in_clause(ids)
+        query = f"""
+            SELECT experiment_id, summary_json
+            FROM summaries
+            WHERE experiment_id IN ({placeholders})
+            """
+        self.cursor.execute(query, ids)
+        return self.cursor.fetchall()
 
-
+    def get_artifacts(self, ids):
+        if not ids:
+            return []
+        placeholders = self._execute_in_clause(ids)
+        query = f"""
+            SELECT experiment_id, model_path, predictions_path, plots_path, feature_importance_path
+            FROM artifacts
+            WHERE experiment_id IN ({placeholders})
+            """
+        self.cursor.execute(query, ids)
+        return self.cursor.fetchall()
 
