@@ -23,8 +23,7 @@ class ExperimentTracker:
         self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS experiments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                run_id TEXT UNIQUE,
+                run_id TEXT PRIMARY KEY UNIQUE,
                 name TEXT,
                 model_type TEXT,
                 dataset_path TEXT,
@@ -43,7 +42,7 @@ class ExperimentTracker:
                 mse REAL,
                 r2 REAL,
                 rank_ic REAL,
-                FOREIGN KEY(experiment_id) REFERENCES experiments(id) ON DELETE CASCADE
+                FOREIGN KEY(experiment_id) REFERENCES experiments(run_id) ON DELETE CASCADE
             )
             """
         )
@@ -54,7 +53,7 @@ class ExperimentTracker:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 experiment_id INTEGER,
                 summary_json TEXT,
-                FOREIGN KEY(experiment_id) REFERENCES experiments(id) ON DELETE CASCADE
+                FOREIGN KEY(experiment_id) REFERENCES experiments(run_id) ON DELETE CASCADE
             )
             """
         )
@@ -68,7 +67,7 @@ class ExperimentTracker:
                 predictions_path TEXT,
                 plots_path TEXT,
                 feature_importance_path TEXT,
-                FOREIGN KEY(experiment_id) REFERENCES experiments(id) ON DELETE CASCADE
+                FOREIGN KEY(experiment_id) REFERENCES experiments(run_id) ON DELETE CASCADE
             )
             """
         )
@@ -99,29 +98,28 @@ class ExperimentTracker:
         self.conn.commit()
         return self.cursor.lastrowid
 
-    def log_split_metrics(self, experiment_id, split, mse, r2, rank_ic):
+    def log_split_metrics(self, split, mse, r2, rank_ic):
         self.cursor.execute(
             """
             INSERT INTO metrics (experiment_id, split, mse, r2, rank_ic)
             VALUES (?, ?, ?, ?, ?)
             """,
-            (experiment_id, split, mse, r2, rank_ic),
+            (self.run_id, split, mse, r2, rank_ic),
         )
         self.conn.commit()
 
-    def log_summary(self, experiment_id, summary):
+    def log_summary(self, summary):
         self.cursor.execute(
             """
             INSERT INTO summaries (experiment_id, summary_json)
             VALUES (?, ?)
             """,
-            (experiment_id, json.dumps(summary)),
+            (self.run_id, json.dumps(summary)),
         )
         self.conn.commit()
 
     def log_artifacts(
             self,
-            experiment_id,
             model_path=None,
             predictions_path=None,
             plots_path=None,
@@ -134,7 +132,7 @@ class ExperimentTracker:
             )
             VALUES (?, ?, ?, ?, ?)
             """,
-            (experiment_id, model_path, predictions_path, plots_path, feature_importance_path),
+            (self.run_id, model_path, predictions_path, plots_path, feature_importance_path),
         )
         self.conn.commit()
 

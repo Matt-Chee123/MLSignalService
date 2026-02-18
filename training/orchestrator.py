@@ -144,7 +144,6 @@ class TrainingOrchestrator:
             )
 
             self.tracker.log_split_metrics(
-                self.experiment_id,
                 idx,
                 metrics.get("mse"),
                 metrics.get("r2"),
@@ -198,7 +197,7 @@ class TrainingOrchestrator:
             "shuffle_summary": self.shuffle_metrics,
             "passed_validation": json.loads(json.dumps(validation, default=float)),
         }
-        self.tracker.log_summary(self.experiment_id, summary_payload)
+        self.tracker.log_summary(summary_payload)
         if validation:
             self.train_full_model()
 
@@ -207,7 +206,6 @@ class TrainingOrchestrator:
         metrics_path = str(self.metrics_dir)
 
         self.tracker.log_artifacts(
-            self.experiment_id,
             model_path=str(self.models_dir),
             predictions_path=str(self.predictions_dir),
             plots_path=str(self.metrics_dir),
