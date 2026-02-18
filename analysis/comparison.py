@@ -23,6 +23,12 @@ class CompareModels:
         self.summary_data = self.get_summary_data(experiment_ids)
         self.artifacts_data = self.get_artifacts(experiment_ids)
 
+        self.experiments_df = pd.DataFrame()
+        self.metrics_df     = pd.DataFrame()
+        self.summaries      = {}
+        self.artifacts_df   = pd.DataFrame()
+        self._build_frames()
+
     def _execute_in_clause(self, ids):
         placeholders = ",".join(["?"] * len(ids))
         return placeholders
@@ -33,7 +39,7 @@ class CompareModels:
 
         placeholders = self._execute_in_clause(ids)
         query = f"""
-            SELECT run_id, name, model_type, dataset_path, created_at
+            SELECT run_id, name, model_type, dataset_path, config_json, created_at
             FROM experiments
             WHERE run_id IN ({placeholders})
             ORDER BY created_at DESC
@@ -77,4 +83,29 @@ class CompareModels:
             """
         self.cursor.execute(query, ids)
         return self.cursor.fetchall()
+
+    def _build_frames(self):
+        if self.experiment_data:
+            self.experiments_df = pd.DataFrame(
+                self.experiment_data,
+                columns=["run_id","name","model_type","dataset_path", "config_json","created_at"]
+            )
+        if self.metrics_data:
+            self.metrics_df = pd.DataFrame(
+                self.metrics_data,
+                columns=["experiment_id", "split", "mse", "r2", "rank_ic"]
+            )
+            if not self.experiments_df.empty:
+                nm = self.experiments_df.set_index("run_id")["name"].to_dict()
+                self.metrics_df["model_name"] = self.metrics_df["experiment_id"].map(nm)
+                
+        for eid, js in self.summary_data:
+            try:    self.summaries[eid] = json.loads(js)
+            except: self.summaries[eid] = {}
+            
+        if self.artifacts_data:
+            self.artifacts_df = pd.DataFrame(
+                self.artifacts_data,
+                columns=["experiment_id","model_path","predictions_path",
+                         "plots_path","feature_importance_path"])
 
