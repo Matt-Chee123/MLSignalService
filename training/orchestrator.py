@@ -22,6 +22,7 @@ class TrainingOrchestrator:
         self.training_config = config['training']
         self.tracker = ExperimentTracker(run_id=RUN_ID)
 
+
         self.evaluator = Evaluator(
             metrics={
                 name: getattr(metric_lib, name)
@@ -43,6 +44,7 @@ class TrainingOrchestrator:
         self.logs_dir = self.run_dir / "logs"
         self.train_dir = self.run_dir / "train_data"
         self.predictions_dir = self.run_dir / "predictions"
+        self.analysis_dir = self.run_dir / "analysis"
 
         for d in [self.run_dir, self.models_dir, self.metrics_dir, self.logs_dir, self.predictions_dir]:
             d.mkdir(parents=True, exist_ok=True)
@@ -133,8 +135,19 @@ class TrainingOrchestrator:
             model = Trainer(self.model_config, self.models_dir)
             X_train, y_train = train.drop(columns="label"), train["label"]
             X_test, y_test = test.drop(columns="label"), test["label"]
+
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
+
+            if idx == len(self.splits) - 1:
+                self.feature_names = X_train.columns.tolist()
+                self.last_split = {
+                        'model': model.model.model,
+                        'X_train': X_train,
+                        'X_test': X_test,
+                        'y_train': y_train,
+                        'y_test': y_test
+                    }
 
             metrics = self.evaluator.evaluate_split(
                 y_true=y_test,
@@ -189,6 +202,7 @@ class TrainingOrchestrator:
 
     def run_pipeline(self,data_dir):
         self.load_data(data_dir)
+
         self.run_cross_validation()
         self.run_shuffle_test()
         validation = self.evaluator.pass_validation(self.split_metrics, self.shuffle_metrics)
@@ -209,6 +223,7 @@ class TrainingOrchestrator:
             model_path=str(self.models_dir),
             predictions_path=str(self.predictions_dir),
             plots_path=str(self.metrics_dir),
+            analysis_path=str(self.analysis_dir)
         )
         self.tracker.close()
 

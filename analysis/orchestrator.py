@@ -1,7 +1,8 @@
 from pathlib import Path
 from training.orchestrator import TrainingOrchestrator
 from config.config import TRAINING_CONFIG
-
+import json
+from analysis.feature_analysis import FeatureSelector, FeatureAnalyser
 from analysis.validators import StatisticalValidator
 from analysis.diagnostics import ModelDiagnostics, RegimeAnalyser
 from analysis.visualisations import ReportGenerator
@@ -88,6 +89,43 @@ class AnalysisOrchestrator:
 
         return regime_analyzer
 
+    def run_feature_analysis(self):
+        print("\n" + "="*70)
+        print("RUNNING FEATURE ANALYSIS")
+        print("="*70)
+
+        last_split = self.trainer.last_split
+        analyser = FeatureAnalyser(
+            model=last_split['model'],
+            feature_names=self.trainer.feature_names,
+            X_train=last_split['X_train'],
+            y_train=last_split['y_train'],
+            X_test=last_split['X_test'],
+            y_test=last_split['y_test'],
+        )
+
+        analyser.print_importance_report(top_n=20)
+
+        importance_df = analyser.get_tree_importance()
+        importance_df.to_parquet(self.analysis_dir / "feature_importance.parquet")
+
+        export = {
+            "group_stats": analyser.analyse_feature_groups(),
+            "feature_reduction": {
+                "80pct": analyser.get_features_target_importance(0.80),
+                "90pct": analyser.get_features_target_importance(0.90),
+                "95pct": analyser.get_features_target_importance(0.95),
+            },
+            "redundant_pairs": [
+                {"feature_a": a, "feature_b": b, "correlation": round(float(c), 4)}
+                for a, b, c in analyser.find_redundant_features(correlation_threshold=0.95)
+            ],
+        }
+        with open(self.analysis_dir / "feature_analysis.json", 'w') as f:
+            json.dump(export, f, indent=2, default=float)
+
+        return analyser
+
     def generate_visualizations(self):
         print("\n" + "="*70)
         print("GENERATING VISUALIZATIONS")
@@ -131,6 +169,10 @@ class AnalysisOrchestrator:
             results['regime_analyzer'] = self.run_regime_analysis()
         except Exception as e:
             print(f"⚠️  Error in regime analysis: {e}")
+#        try:
+        results['feature_analyser'] = self.run_feature_analysis()
+        # except Exception as e:
+        #     print(f"⚠️  Error in feature analysis: {e}")
 
         try:
             self.generate_visualizations()

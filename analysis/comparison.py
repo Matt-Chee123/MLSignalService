@@ -77,7 +77,7 @@ class CompareModels:
             return []
         placeholders = self._execute_in_clause(ids)
         query = f"""
-            SELECT experiment_id, model_path, predictions_path, plots_path, feature_importance_path
+            SELECT experiment_id, model_path, predictions_path, plots_path, analysis_path
             FROM artifacts
             WHERE experiment_id IN ({placeholders})
             """
@@ -107,5 +107,70 @@ class CompareModels:
             self.artifacts_df = pd.DataFrame(
                 self.artifacts_data,
                 columns=["experiment_id","model_path","predictions_path",
-                         "plots_path","feature_importance_path"])
+                         "plots_path","analysis_path"])
 
+    def ic_statistics(self):
+        if self.metrics_df.empty:
+            return pd.DataFrame()
+
+        records = []
+        print(self.metrics_df)
+        for eid, grp in self.metrics_df.groupby("experiment_id"):
+            ic = grp["rank_ic"].dropna()
+            if len(ic) < 2: continue
+            ir = ic.mean() / ic.std() if ic.std() > 0 else np.nan
+            records.append({
+                "experiment_id": eid,
+                "model_name": grp["model_name"].iloc[0],
+                "ic_mean": round(ic.mean(), 4),
+                "ic_std": round(ic.std(), 4),
+                "ic_ir": round(ir, 4),
+                "hit_rate": round((ic > 0).mean(), 4),
+                "ic_min": round(ic.min(), 4),
+                "ic_max": round(ic.max(), 4),
+                "n_splits": len(ic),
+            })
+        return pd.DataFrame(records)
+
+    def retrieve_analysis_data(self, file, type):
+        if self.artifacts_df.empty:
+            return None
+
+        results = {}
+        analysis_path = Path(self.artifacts_df["analysis_path"].iloc[0])
+        val_file = analysis_path / file
+
+        if not val_file.exists():
+            print("Validation file not found:", val_file)
+            return None
+
+        if type == 'json':
+            with open(val_file, "r") as f:
+                data = json.load(f)
+        else:
+            data = pd.read_parquet(val_file)
+
+        return data
+
+    def get_validation_data(self):
+        data = self.retrieve_analysis_data('validation_results.json', 'json')
+        return data
+
+    def get_feature_analysis(self):
+        data = self.retrieve_analysis_data('feature_analysis.json', 'json')
+        return data
+
+    def get_diagnostics_analysis(self):
+        data = self.retrieve_analysis_data('diagnostics_summary.json', 'json')
+        return data
+
+    def get_feature_importance(self):
+        data = self.retrieve_analysis_data('feature_importance.parquet', 'parquet')
+        return data
+
+    def get_regime_analysis(self):
+        data = self.retrieve_analysis_data('regime_analysis.parquet', 'parquet')
+        return data
+
+model = CompareModels(experiment_ids=['20260219_210026'])
+print(model.get_regime_analysis())

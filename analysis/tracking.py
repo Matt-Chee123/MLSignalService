@@ -66,7 +66,7 @@ class ExperimentTracker:
                 model_path TEXT,
                 predictions_path TEXT,
                 plots_path TEXT,
-                feature_importance_path TEXT,
+                analysis_path TEXT,
                 FOREIGN KEY(experiment_id) REFERENCES experiments(run_id) ON DELETE CASCADE
             )
             """
@@ -123,16 +123,16 @@ class ExperimentTracker:
             model_path=None,
             predictions_path=None,
             plots_path=None,
-            feature_importance_path=None,
+            analysis_path=None,
     ):
         self.cursor.execute(
             """
             INSERT INTO artifacts (
-                experiment_id, model_path, predictions_path, plots_path, feature_importance_path
+                experiment_id, model_path, predictions_path, plots_path,analysis_path
             )
             VALUES (?, ?, ?, ?, ?)
             """,
-            (self.run_id, model_path, predictions_path, plots_path, feature_importance_path),
+            (self.run_id, model_path, predictions_path, plots_path, analysis_path),
         )
         self.conn.commit()
 
