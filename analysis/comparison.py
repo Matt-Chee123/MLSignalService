@@ -137,21 +137,36 @@ class CompareModels:
             return None
 
         results = {}
-        analysis_path = Path(self.artifacts_df["analysis_path"].iloc[0])
-        val_file = analysis_path / file
 
-        if not val_file.exists():
-            print("Validation file not found:", val_file)
+        for _, row in self.artifacts_df.iterrows():
+            eid = row["experiment_id"]
+            analysis_path = Path(row["analysis_path"])
+            val_file = analysis_path / file
+
+            if not val_file.exists():
+                print(f"[{eid}] File not found:", val_file)
+                continue
+
+            if type == "json":
+                with open(val_file, "r") as f:
+                    data = json.load(f)
+            else:
+                data = pd.read_parquet(val_file)
+
+            results[eid] = data
+
+        if not results:
             return None
 
-        if type == 'json':
-            with open(val_file, "r") as f:
-                data = json.load(f)
-        else:
-            data = pd.read_parquet(val_file)
+        if type != "json":
+            combined = []
+            for eid, df in results.items():
+                df = df.copy()
+                df["experiment_id"] = eid
+                combined.append(df)
+            return pd.concat(combined, ignore_index=True)
 
-        return data
-
+        return results
     def get_validation_data(self):
         data = self.retrieve_analysis_data('validation_results.json', 'json')
         return data
@@ -172,5 +187,7 @@ class CompareModels:
         data = self.retrieve_analysis_data('regime_analysis.parquet', 'parquet')
         return data
 
-model = CompareModels(experiment_ids=['20260219_210026'])
-print(model.get_regime_analysis())
+
+
+model = CompareModels(experiment_ids=['20260219_210026','20260220_214631'])
+print(model.get_feature_importance())
