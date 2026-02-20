@@ -185,9 +185,10 @@ class CompareModels:
 
     def get_regime_analysis(self):
         data = self.retrieve_analysis_data('regime_analysis.parquet', 'parquet')
+        data = data.set_index(['experiment_id','split'])
         return data
 
 
 
 model = CompareModels(experiment_ids=['20260219_210026','20260220_214631'])
-print(model.get_feature_importance())
+print(model.get_regime_analysis())
