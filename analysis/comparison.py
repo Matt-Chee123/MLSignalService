@@ -167,17 +167,132 @@ class CompareModels:
             return pd.concat(combined, ignore_index=True)
 
         return results
+
     def get_validation_data(self):
         data = self.retrieve_analysis_data('validation_results.json', 'json')
-        return data
+        if not data:
+            return None
+
+        records = []
+
+        for eid, content in data.items():
+            row = {"experiment_id": eid}
+
+            for metric_name, stats_dict in content.items():
+                row[f"{metric_name}_mean"] = stats_dict.get("ic_mean")
+                row[f"{metric_name}_std"] = stats_dict.get("ic_std")
+                row[f"{metric_name}_median"] = stats_dict.get("ic_median")
+                row[f"{metric_name}_ir"] = stats_dict.get("information_ratio")
+                row[f"{metric_name}_t_stat"] = stats_dict.get("t_statistic")
+                row[f"{metric_name}_p_value"] = stats_dict.get("p_value")
+                row[f"{metric_name}_ci_lower"] = stats_dict.get("ci_lower")
+                row[f"{metric_name}_ci_upper"] = stats_dict.get("ci_upper")
+                row[f"{metric_name}_positive_ratio"] = stats_dict.get("positive_split_ratio")
+                row[f"{metric_name}_vs_shuffle_t"] = stats_dict.get("vs_shuffle_t_stat")
+                row[f"{metric_name}_vs_shuffle_p"] = stats_dict.get("vs_shuffle_p_value")
+                row[f"{metric_name}_significant"] = stats_dict.get("is_significant")
+                row[f"{metric_name}_beats_random"] = stats_dict.get("beats_random")
+
+            records.append(row)
+
+        df = pd.DataFrame(records)
+
+        if not self.experiments_df.empty:
+            name_map = self.experiments_df.set_index("run_id")["name"]
+            df["model_name"] = df["experiment_id"].map(name_map)
+
+        return df.set_index("experiment_id")
 
     def get_feature_analysis(self):
         data = self.retrieve_analysis_data('feature_analysis.json', 'json')
-        return data
+        if not data:
+            return None
+
+        records = []
+
+        for eid, content in data.items():
+            row = {"experiment_id": eid}
+
+            group_stats = content.get("group_stats", {})
+
+            for group_name, stats_dict in group_stats.items():
+                row[f"{group_name}_total_imp"] = stats_dict.get("total_importance")
+                row[f"{group_name}_mean_imp"] = stats_dict.get("mean_importance")
+                row[f"{group_name}_top_imp"] = stats_dict.get("top_importance")
+
+            reduction = content.get("feature_reduction", {})
+            row["n_features_80pct"] = len(reduction.get("80pct", []))
+            row["n_features_90pct"] = len(reduction.get("90pct", []))
+            row["n_features_95pct"] = len(reduction.get("95pct", []))
+
+            redundant_pairs = content.get("redundant_pairs", [])
+            row["n_redundant_pairs"] = len(redundant_pairs)
+
+            if redundant_pairs:
+                correlations = [p["correlation"] for p in redundant_pairs]
+                row["max_redundancy_corr"] = max(correlations)
+                row["mean_redundancy_corr"] = np.mean(correlations)
+            else:
+                row["max_redundancy_corr"] = None
+                row["mean_redundancy_corr"] = None
+
+            records.append(row)
+
+        df = pd.DataFrame(records)
+
+        if not self.experiments_df.empty:
+            name_map = self.experiments_df.set_index("run_id")["name"]
+            df["model_name"] = df["experiment_id"].map(name_map)
+
+        return df.set_index("experiment_id")
 
     def get_diagnostics_analysis(self):
         data = self.retrieve_analysis_data('diagnostics_summary.json', 'json')
-        return data
+        if not data:
+            return None
+
+        records = []
+
+        for eid, content in data.items():
+            row = {"experiment_id": eid}
+
+            stability = content.get("stability", {})
+            row.update({
+                "cv": stability.get("coefficient_of_variation"),
+                "iqr": stability.get("interquartile_range"),
+                "stable_splits": stability.get("stable_splits"),
+                "outliers_low": stability.get("outliers_low"),
+                "outliers_high": stability.get("outliers_high"),
+                "best_ic": stability.get("best_split", {}).get("value"),
+                "worst_ic": stability.get("worst_split", {}).get("value"),
+            })
+
+            temporal = content.get("temporal", {})
+            row.update({
+                "trend_slope": temporal.get("trend_slope"),
+                "trend_pvalue": temporal.get("trend_pvalue"),
+                "trend_r2": temporal.get("trend_r_squared"),
+                "first_half_ic": temporal.get("first_half_mean_ic"),
+                "second_half_ic": temporal.get("second_half_mean_ic"),
+                "autocorr": temporal.get("autocorrelation"),
+            })
+
+            avs = content.get("actual_vs_shuffle", {}).get("rank_ic", {})
+            row.update({
+                "ic_actual_mean": avs.get("actual_mean"),
+                "ic_shuffle_mean": avs.get("shuffle_mean"),
+                "ic_effect_size": avs.get("effect_size"),
+            })
+
+            records.append(row)
+
+        df = pd.DataFrame(records)
+
+        if not self.experiments_df.empty:
+            name_map = self.experiments_df.set_index("run_id")["name"]
+            df["model_name"] = df["experiment_id"].map(name_map)
+
+        return df.set_index("experiment_id")
 
     def get_feature_importance(self):
         data = self.retrieve_analysis_data('feature_importance.parquet', 'parquet')
@@ -191,4 +306,4 @@ class CompareModels:
 
 
 model = CompareModels(experiment_ids=['20260219_210026','20260220_214631'])
-print(model.get_regime_analysis())
+print(model.get_validation_data())
