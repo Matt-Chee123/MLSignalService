@@ -11,7 +11,7 @@ from scipy import stats
 
 logger = logging.getLogger(__name__)
 
-class CompareModels:
+class ExperimentDataRepo:
     def __init__(self, experiment_ids=[], db_path='../data/experiments/tracking.db'):
         self.experiment_ids = experiment_ids
         self.db_path = db_path
@@ -303,7 +303,3 @@ class CompareModels:
         data = data.set_index(['experiment_id','split'])
         return data
 
-
-
-model = CompareModels(experiment_ids=['20260219_210026','20260220_214631'])
-print(model.get_validation_data())
