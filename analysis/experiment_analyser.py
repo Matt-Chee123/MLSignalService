@@ -26,7 +26,7 @@ class ModelAnalyzer:
 
         records = []
 
-        for eid, grp in self.metrics_df.groupby("experiment_id"):
+        for eid, grp in self.metrics_df.exp_groupsby("experiment_id"):
             ic = grp["rank_ic"].dropna()
 
             if len(ic) < 2:
@@ -63,10 +63,65 @@ class ModelAnalyzer:
         return df.sort_values(sort_by, ascending=False).set_index("experiment_id")
 
     def compare_stability(self):
-        pass
+        if self.diagnostics_df is None or self.diagnostics_df.empty:
+            return []
+
+        records = []
+        for experiment_id, data in self.diagnostics_df.iterrows():
+            coefficient_variation = data['cv'] + data['ic_actual_mean']
+
+            records.append({
+                'id': experiment_id,
+                'coefficient_variation': coefficient_variation,
+                'stable_splits': data['stable_splits'],
+                'outliers_high': data['outliers_high'],
+                'outliers_low': data['outliers_low'],
+                'trend_slope': data['trend_slope'],
+                'decay_rate': data['second_half_ic'] / data['first_half_ic'],
+                'autocorrelation': data['autocorr'],
+                'effect_size': data['ic_effect_size'],
+            })
+        return pd.DataFrame(records)
 
     def compare_regime_robustness(self):
-        pass
+        if self.regime_df is None or self.regime_df.empty:
+            return pd.DataFrame()
+
+        results = []
+
+        for exp_id, group in self.regime_df.groupby(level="experiment_id"):
+            mean_ic = group["rank_ic"].mean()
+            std_ic = group["rank_ic"].std()
+            cv_ic = std_ic / abs(mean_ic) if mean_ic != 0 else None
+            worst_ic = group["rank_ic"].min()
+            skew_ic = group["rank_ic"].skew()
+            positive_split_ratio = (group["rank_ic"] > 0).mean()
+
+            down_mask = group["market_return"] < 0
+            down_ic = group.loc[down_mask, "rank_ic"].mean()
+
+            stress_threshold = group["max_drawdown"].quantile(0.8)
+            stress_mask = group["max_drawdown"] <= stress_threshold
+            stress_ic = group.loc[stress_mask, "rank_ic"].mean()
+
+            vol_corr = group["rank_ic"].corr(group["market_volatility"])
+            dir_corr = group["rank_ic"].corr(group["market_return"])
+
+            results.append({
+                "experiment": exp_id,
+                "mean_ic": mean_ic,
+                "std_ic": std_ic,
+                "cv_ic": cv_ic,
+                "worst_ic": worst_ic,
+                "down_ic": down_ic,
+                "stress_ic": stress_ic,
+                "vol_corr": vol_corr,
+                "dir_corr": dir_corr,
+                "skew_ic": skew_ic,
+                "positive_split_ratio": positive_split_ratio
+            })
+
+        return pd.DataFrame(results)
 
     def compare_feature_risk(self):
         pass
@@ -79,5 +134,4 @@ analyzer = ModelAnalyzer(
     feature_df=repo.get_feature_analysis(),
     regime_df=repo.get_regime_analysis(),
 )
-ic_comparison = analyzer.compare_ic()
-print(ic_comparison)
+print(analyzer.compare_regime_robustness())
