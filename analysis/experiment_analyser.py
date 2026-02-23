@@ -124,7 +124,45 @@ class ModelAnalyzer:
         return pd.DataFrame(results)
 
     def compare_feature_risk(self):
-        pass
+        if self.feature_df is None or self.feature_df.empty:
+            return pd.DataFrame()
+
+        results = []
+
+        for exp_id, row in self.feature_df.iterrows():
+            total_cols = [c for c in row.index if c.endswith("_total_imp")]
+            importances = row[total_cols].dropna()
+
+            total_importance = importances.sum()
+
+            weights = importances / total_importance if total_importance != 0 else importances
+
+            top_weight = weights.max()
+            top3_weight = weights.sort_values(ascending=False).head(3).sum()
+            hhi = (weights ** 2).sum()
+
+            redundancy_pairs = row["n_redundant_pairs"]
+            max_corr = row["max_redundancy_corr"]
+            mean_corr = row["mean_redundancy_corr"]
+
+            n80 = row["n_features_80pct"]
+            n90 = row["n_features_90pct"]
+            n95 = row["n_features_95pct"]
+
+            results.append({
+                "experiment": exp_id,
+                "top_feature_weight": top_weight,
+                "top3_weight": top3_weight,
+                "hhi_concentration": hhi,
+                "n_features_80pct": n80,
+                "n_features_90pct": n90,
+                "n_features_95pct": n95,
+                "n_redundant_pairs": redundancy_pairs,
+                "max_redundancy_corr": max_corr,
+                "mean_redundancy_corr": mean_corr
+            })
+
+        return pd.DataFrame(results)
 
 repo = ExperimentDataRepo(experiment_ids=['20260219_210026','20260220_214631'])
 analyzer = ModelAnalyzer(
@@ -134,4 +172,4 @@ analyzer = ModelAnalyzer(
     feature_df=repo.get_feature_analysis(),
     regime_df=repo.get_regime_analysis(),
 )
-print(analyzer.compare_regime_robustness())
+print(analyzer.compare_feature_risk())
