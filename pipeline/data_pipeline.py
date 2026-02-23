@@ -1,6 +1,6 @@
 import logging
 import pandas as pd
-from config.config import TICKERS, START_DATE, END_DATE, RAW_DATA_PATH, INTERVAL, PROCESSED_DATA_PATH, SPLIT_DATA_PATH, RUN_ID
+from config.config import TICKERS, START_DATE, END_DATE, RAW_DATA_PATH, INTERVAL, PROCESSED_DATA_PATH, SPLIT_DATA_PATH, RUN_ID, HORIZON
 from data.fetch_data import fetch_universe, save_data
 from data.split import DataSplitter
 from data.features.feature_engineering import FeatureEngineer
@@ -59,7 +59,7 @@ class MarketDataPipeline:
 
     def split_data(self, labeled_df: pd.DataFrame):
         self.logger.info(f"Splitting data into {self.iterations} iterations...")
-        splitter = DataSplitter(iterations=self.iterations)
+        splitter = DataSplitter(iterations=self.iterations, horizon=HORIZON)
         splits = splitter.split(labeled_df)
         output_dir = splitter.save_splits(splits, self.split_data_path)
         self.logger.info(f"Created {len(splits)} train/test splits.")

@@ -25,6 +25,8 @@ OUTPUT_PATH = '../data/datasets'
 
 RUN_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
 
+HORIZON = '3'
+
 INTERVAL = '1d'
 
 TRAINING_CONFIG = {
