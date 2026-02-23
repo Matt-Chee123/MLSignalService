@@ -1,5 +1,7 @@
 from pathlib import Path
 import pandas as pd
+
+from config.backtest_config import HORIZON
 from data.fetch_data import fetch_universe
 from datetime import datetime, date, timedelta
 
@@ -7,19 +9,21 @@ def format_date(date):
     dt_object = datetime.strptime(date, "%Y-%m-%d %H:%M:%S%z")
     return dt_object.strftime("%Y-%m-%d")
 
-def load_backtest_data(experiment, run_id):
+def load_backtest_data(experiment, run_id, horizon):
     prediction_loader = PredictionLoader(experiment)
     market_loader = MarketDataLoader()
 
     pred_data = prediction_loader.load_from_csv(run_id)
+    tickers = pred_data['Ticker'].unique().tolist()
     raw_start = datetime.strptime(pred_data['Date'].min(), "%Y-%m-%d %H:%M:%S%z")
     raw_end = datetime.now()
 
     start = raw_start.strftime("%Y-%m-%d")
     end = raw_end.strftime("%Y-%m-%d")
 
-    print(f"Tickers: {pred_data['Ticker'].unique().tolist()}")
-    print(f"Range: {start} to {end}")
+    market_data = market_loader.fetch_historical_data(tickers, start, end)
+    forward_returns = market_loader.compute_forward_returns(market_data, HORIZON)
+    print(forward_returns)
 
 class PredictionLoader:
     def __init__(self, experiment='rf_signal_v1'):
@@ -35,19 +39,25 @@ class MarketDataLoader:
 
     def fetch_historical_data(self, tickers, start, end):
         data = fetch_universe(tickers, start, end)
+        if isinstance(data.columns, pd.MultiIndex):
+            data = data.stack(level=1)
+            data.index.names = ['Date', 'Ticker']
+        data = data.set_index(['Date','Ticker'])
+
         return data
 
-    def compute_forward_returns(self, prices, horizon=60):
+    def compute_forward_returns(self, prices, horizon=3):
         if not isinstance(prices.index, pd.MultiIndex):
             raise ValueError("Prices must have MultiIndex (Date, Ticker)")
 
-        df = prices.copy()
+        horizon = horizon * 20
 
+        df = prices.copy()
         df[f"forward_return_{horizon}d"] = (
-                df.groupby(level="Ticker")['Adj Close']
-                .shift(-horizon) / df['Adj Close'] - 1
+                df.groupby(level="Ticker")['Close']
+                .shift(-horizon) / df['Close'] - 1
         )
 
         return df
 
-load_backtest_data('rf_signal_v1', '20260219_210026')
+load_backtest_data('rf_signal_v1', '20260219_210026', HORIZON)
