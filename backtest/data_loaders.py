@@ -14,8 +14,14 @@ def load_backtest_data(experiment, run_id, horizon):
     market_loader = MarketDataLoader()
 
     pred_data = prediction_loader.load_from_csv(run_id)
-    tickers = pred_data['Ticker'].unique().tolist()
-    raw_start = datetime.strptime(pred_data['Date'].min(), "%Y-%m-%d %H:%M:%S%z")
+
+    pred_data['Date'] = pd.to_datetime(pred_data['Date'])
+
+    pred_data = pred_data.set_index(['Date', 'Ticker']).sort_index()
+
+    tickers = pred_data.index.get_level_values('Ticker').unique().tolist()
+
+    raw_start = pred_data.index.get_level_values('Date').min()
     raw_end = datetime.now()
 
     start = raw_start.strftime("%Y-%m-%d")
@@ -23,7 +29,13 @@ def load_backtest_data(experiment, run_id, horizon):
 
     market_data = market_loader.fetch_historical_data(tickers, start, end)
     forward_returns = market_loader.compute_forward_returns(market_data, HORIZON)
-    print(forward_returns)
+
+
+    return {
+        'predictions': pred_data,
+        'prices': market_data,
+        'returns': forward_returns
+    }
 
 class PredictionLoader:
     def __init__(self, experiment='rf_signal_v1'):
@@ -53,11 +65,10 @@ class MarketDataLoader:
         horizon = horizon * 20
 
         df = prices.copy()
-        df[f"forward_return_{horizon}d"] = (
+        df["forward_return"] = (
                 df.groupby(level="Ticker")['Close']
                 .shift(-horizon) / df['Close'] - 1
         )
 
         return df
 
-load_backtest_data('rf_signal_v1', '20260219_210026', HORIZON)
