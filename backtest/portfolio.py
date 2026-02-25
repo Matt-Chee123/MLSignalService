@@ -5,7 +5,7 @@ from config.backtest_config import HORIZON
 import pandas as pd
 
 class PortfolioConstructor:
-    def __init__(self, strategy='quantile_long_short', long_pct=0.2, short_pct=0.2, sizing='equal', neutralize='market'):
+    def __init__(self, strategy='long_only', long_pct=0.2, short_pct=0.2, sizing='equal', neutralize='market'):
         self.strategy = strategy
         self.long_pct = long_pct
         self.short_pct = short_pct
@@ -13,6 +13,23 @@ class PortfolioConstructor:
         self.neutralize = neutralize
 
         self.portfolio = None
+
+    def _long_only(self, data):
+        portfolios = []
+
+        for date, group in data.groupby('Date'):
+            n = len(group)
+
+            long_n = int(n * self.long_pct)
+            short_n = int(n * self.short_pct)
+            sorted_group = group.sort_values('pred_label', ascending=False)
+            longs = sorted_group.tail(long_n).copy()
+            longs['weight'] = 1 / long_n
+
+            daily_portfolio = pd.DataFrame(longs)
+            portfolios.append(daily_portfolio)
+
+        return pd.concat(portfolios)
 
     def _quantile_long_short(self, data):
 
@@ -33,21 +50,23 @@ class PortfolioConstructor:
             portfolios.append(daily_portfolio)
 
         return pd.concat(portfolios)
+
     def construct(self, aligned_data):
-        print(aligned_data.head())
         if aligned_data is None or aligned_data.empty:
             raise ValueError("No aligned data found")
 
 
         if self.strategy == 'quantile_long_short':
             portfolio = self._quantile_long_short(aligned_data)
+        elif self.strategy == 'long_only':
+            portfolio = self._long_only(aligned_data)
         else:
             raise ValueError("No correct strategy found")
-        print(portfolio.head())
+        print(portfolio)
         return portfolio
 
 
-data = load_backtest_data('rf_signal_v1', '20260219_210026', HORIZON)
+data = load_backtest_data('rf_signal_v1', '20260224_202528', HORIZON)
 aligner = DataAligner(data['predictions'],data['prices'],data['returns'])
 combined_data = aligner.align()
 
