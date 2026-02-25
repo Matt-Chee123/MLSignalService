@@ -22,10 +22,9 @@ class PortfolioConstructor:
 
             long_n = int(n * self.long_pct)
             short_n = int(n * self.short_pct)
-            sorted_group = group.sort_values('pred_label', ascending=False)
+            sorted_group = group.sort_values('pred_label', ascending=True)
             longs = sorted_group.tail(long_n).copy()
             longs['weight'] = 1 / long_n
-
             daily_portfolio = pd.DataFrame(longs)
             portfolios.append(daily_portfolio)
 
@@ -40,11 +39,11 @@ class PortfolioConstructor:
 
             long_n = int(n * self.long_pct)
             short_n = int(n * self.short_pct)
-            sorted_group = group.sort_values('pred_label', ascending=False)
+            sorted_group = group.sort_values('pred_label', ascending=True)
             longs = sorted_group.tail(long_n).copy()
             shorts = sorted_group.head(short_n).copy()
-            longs['weight'] = 1 / long_n
-            shorts['weight'] = -1 / short_n
+            longs['weight'] = 0.5 / long_n
+            shorts['weight'] = -0.5 / short_n
 
             daily_portfolio = pd.concat([longs, shorts])
             portfolios.append(daily_portfolio)
@@ -62,7 +61,6 @@ class PortfolioConstructor:
             portfolio = self._long_only(aligned_data)
         else:
             raise ValueError("No correct strategy found")
-        print(portfolio)
         return portfolio
 
 
