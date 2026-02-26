@@ -62,11 +62,3 @@ class PortfolioConstructor:
         else:
             raise ValueError("No correct strategy found")
         return portfolio
-
-
-data = load_backtest_data('rf_signal_v1', '20260224_202528', HORIZON)
-aligner = DataAligner(data['predictions'],data['prices'],data['returns'])
-combined_data = aligner.align()
-
-constructor = PortfolioConstructor()
-constructor.construct(combined_data)

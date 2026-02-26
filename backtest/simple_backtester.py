@@ -1,7 +1,7 @@
 from backtest.data_loaders import load_backtest_data
 from backtest.align_data import DataAligner
 from backtest.portfolio import PortfolioConstructor
-from config.backtest_config import HORIZON
+from config.backtest_config import HORIZON, BENCHMARK
 
 import pandas as pd
 import numpy as np
@@ -14,6 +14,7 @@ class BacktestResults:
     period_returns: pd.Series
     cumulative_returns: pd.Series
     metrics: Dict[str, float]
+    nav: pd.DataFrame
 
     def print_summary(self):
         print("\n" + "=" * 60)
@@ -29,37 +30,115 @@ class BacktestResults:
 
 class SimpleBacktest:
     def __init__(
-        self, portfolio, horizon_months=3, risk_free_rate=0.02, initial_value=100000):
+        self, portfolio, close_prices, horizon_months=3, risk_free_rate=0.02, initial_value=100000, benchmark=BENCHMARK):
 
-        self.portfolio = portfolio.copy()
+        self.portfolio = portfolio.copy().sort_index(level=["Date", "Ticker"])
         self.horizon_months = horizon_months
         self.periods_per_year = 12 // horizon_months
         self.risk_free = risk_free_rate
         self.initial_value = initial_value
+        self.close_prices = close_prices
+        self.benchmark = benchmark
 
     def run(self):
         period_returns = self._compute_period_returns()
         cumulative_returns = (1 + period_returns).cumprod()
 
-        metrics = self._compute_metrics(period_returns, cumulative_returns)
+        nav = self._compute_portfolio_values()
+
+        nav_returns = nav.pct_change(fill_method=None).dropna()
+
+        metrics = self._compute_metrics(
+            period_returns,
+            cumulative_returns,
+            nav_returns
+        )
+
         return BacktestResults(
             period_returns=period_returns,
             cumulative_returns=cumulative_returns,
+            nav=nav,
             metrics=metrics,
         )
 
-    def _compute_period_returns(self) -> pd.Series:
-        """
-        Compute non-overlapping period returns based on portfolio weights
-        and forward returns. The horizon is in months (self.horizon_months).
-        """
-        df = self.portfolio.copy()
+    def _compute_benchmark_values(self, final_date, index):
 
-        # Ensure weights are in 0-1 range
+        benchmark_prices = (self.close_prices.xs(self.benchmark, level="Ticker"))
+
+        benchmark_prices = benchmark_prices.loc[index]
+
+        benchmark_values = (benchmark_prices / benchmark_prices.iloc[0]) * self.initial_value
+
+        return benchmark_values
+
+    def _compute_portfolio_values(self):
+
+        df = self.portfolio.copy().sort_index()
+
         if df["weight"].abs().max() > 1:
             df["weight"] /= 100
 
-        # Sort by date
+        all_dates = df.index.get_level_values("Date").unique().sort_values()
+
+        step = self.horizon_months * 20
+        rebalance_dates = all_dates[::step]
+
+        nav_series = []
+        current_value = self.initial_value
+
+        for i in range(len(rebalance_dates)):
+
+            start_date = rebalance_dates[i]
+
+            if i < len(rebalance_dates) - 1:
+                end_date = rebalance_dates[i + 1]
+            else:
+                end_date = self.close_prices.index.get_level_values("Date").max()
+
+            weights = df.loc[start_date, "weight"]
+
+            mask = ((self.close_prices.index.get_level_values("Date") >= start_date) & (self.close_prices.index.get_level_values("Date") < end_date))
+
+            price_slice = self.close_prices.loc[mask]
+
+            prices_wide = price_slice.unstack("Ticker")
+
+            prices_wide = prices_wide[weights.index]
+
+            prices_norm = prices_wide / prices_wide.iloc[0]
+
+            segment_index = (prices_norm * weights).sum(axis=1)
+
+            segment_values = segment_index * current_value
+
+            current_value = segment_values.iloc[-1]
+
+            nav_series.append(segment_values)
+
+        portfolio_values = pd.concat(nav_series)
+
+        portfolio_values = portfolio_values[~portfolio_values.index.duplicated()]
+
+        benchmark_prices = self.close_prices.xs(self.benchmark, level="Ticker")
+        benchmark_prices = benchmark_prices.loc[portfolio_values.index]
+
+        benchmark_values = (benchmark_prices / benchmark_prices.iloc[0]) * self.initial_value
+
+        comparison_df = pd.DataFrame({"Portfolio": portfolio_values, "Benchmark": benchmark_values})
+
+        comparison_df["Portfolio_Return"] = comparison_df["Portfolio"].pct_change(fill_method=None)
+
+        return comparison_df
+
+
+
+    def _compute_period_returns(self) -> pd.Series:
+
+        df = self.portfolio.copy()
+
+        if df["weight"].abs().max() > 1:
+            df["weight"] /= 100
+
         df = df.sort_index()
 
         all_dates = df.index.get_level_values("Date").unique().sort_values()
@@ -84,7 +163,7 @@ class SimpleBacktest:
 
         return period_returns
 
-    def _compute_metrics(self, returns, cumulative):
+    def _compute_metrics(self, returns, cumulative, nav_returns):
 
         mean_return = returns.mean()
         vol = returns.std()
@@ -102,11 +181,35 @@ class SimpleBacktest:
         turnover = self._compute_turnover()
         gross_exposure = self._compute_gross_exposure()
 
+        portfolio_daily = nav_returns["Portfolio"]
+        benchmark_daily = nav_returns["Benchmark"]
+
+        excess_daily = portfolio_daily - benchmark_daily
+
+        tracking_error = excess_daily.std() * np.sqrt(252)
+
+        information_ratio = (
+            excess_daily.mean() * 252 / tracking_error
+            if tracking_error != 0 else 0
+        )
+
+        cov = np.cov(portfolio_daily, benchmark_daily)[0][1]
+        beta = cov / benchmark_daily.var()
+
+        ann_portfolio = portfolio_daily.mean() * 252
+        ann_benchmark = benchmark_daily.mean() * 252
+
+        alpha = ann_portfolio - (self.risk_free + beta * (ann_benchmark - self.risk_free))
+
         return {
             "Annual Return": ann_return,
             "Annual Volatility": ann_vol,
             "Sharpe Ratio": sharpe,
             "Max Drawdown": max_dd,
+            "Tracking Error": tracking_error,
+            "Information Ratio": information_ratio,
+            "Beta": beta,
+            "Alpha": alpha,
             "Mean Period Return": mean_return,
             "Average Turnover": turnover,
             "Average Gross Exposure": gross_exposure,
@@ -159,14 +262,13 @@ class SimpleBacktest:
 
 data = load_backtest_data('rf_signal_v1', '20260224_202528', HORIZON)
 aligner = DataAligner(data['predictions'],data['prices'],data['returns'])
-combined_data = aligner.align()
+combined_data, close_prices = aligner.align()
 
 
-constructor = PortfolioConstructor(strategy='quantile_long_short')
+constructor = PortfolioConstructor(strategy='long_only')
 portfolio = constructor.construct(combined_data)
 
-backtester = SimpleBacktest(portfolio)
+backtester = SimpleBacktest(portfolio, close_prices)
 
-metrics = backtester.run()
-print(metrics)
-metrics.print_summary()
+tes = backtester.run()
+print(tes)

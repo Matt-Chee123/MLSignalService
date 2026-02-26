@@ -12,6 +12,7 @@ class DataAligner:
         self.coverage_report = None
 
     def align(self):
+
         combined = self.predictions.join(
             self.returns[['forward_return']],
             how='left'
@@ -39,9 +40,11 @@ class DataAligner:
         self.coverage_report['returns_dropped'] = return_dropped
         self.coverage_report['final_count'] = len(combined)
 
+        close_prices = self.returns['Close']
+
         final_df = combined[['pred_label','forward_return','Close']]
 
-        return final_df
+        return final_df, close_prices
 
     def compute_coverage(self, df):
         total = len(df)
@@ -95,7 +98,3 @@ class DataAligner:
         print(f"Dates with full coverage:    {r['dates_full_coverage']} / {r['dates_total']}")
         print(f"Dates with partial coverage: {r['dates_partial_coverage']}")
         print("=" * 60 + "\n")
-
-data = load_backtest_data('rf_signal_v1', '20260219_210026', HORIZON)
-aligner = DataAligner(data['predictions'],data['prices'],data['returns'])
-aligner.align()

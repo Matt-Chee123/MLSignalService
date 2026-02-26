@@ -1,7 +1,7 @@
 from pathlib import Path
 import pandas as pd
 
-from config.backtest_config import HORIZON
+from config.backtest_config import HORIZON, BENCHMARK
 from data.fetch_data import fetch_universe
 from datetime import datetime, date, timedelta
 
@@ -11,7 +11,7 @@ def format_date(date):
 
 def load_backtest_data(experiment, run_id, horizon):
     prediction_loader = PredictionLoader(experiment)
-    market_loader = MarketDataLoader()
+    market_loader = MarketDataLoader(BENCHMARK)
 
     pred_data = prediction_loader.load_from_csv(run_id)
 
@@ -46,10 +46,11 @@ class PredictionLoader:
         return data
 
 class MarketDataLoader:
-    def __init__(self):
-        pass
+    def __init__(self, benchmark='^GSPC'):
+        self.benchmark = benchmark
 
     def fetch_historical_data(self, tickers, start, end):
+        tickers.append(self.benchmark)
         data = fetch_universe(tickers, start, end)
         if isinstance(data.columns, pd.MultiIndex):
             data = data.stack(level=1)
