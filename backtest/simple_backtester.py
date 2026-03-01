@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from dataclasses import dataclass
 from typing import Dict
 
+import json
+from pathlib import Path
+
 @dataclass
 class BacktestResults:
     period_returns: pd.Series
@@ -27,6 +30,27 @@ class BacktestResults:
                 print(f"{metric:.<40} {value:.2%}")
         print("=" * 60 + "\n")
 
+    def save(self, base_path: str):
+
+        base_path = Path(base_path)
+        backtest_path = base_path / "backtest"
+        backtest_path.mkdir(parents=True, exist_ok=True)
+
+        with open(backtest_path / "metrics.json", "w") as f:
+            json.dump(self.metrics, f, indent=4)
+
+        returns_df = self.nav.copy()
+        returns_df.to_csv(backtest_path / "returns_timeseries.csv")
+
+        plt.figure(figsize=(10, 6))
+        self.nav[["Portfolio", "Benchmark"]].plot()
+        plt.title("Cumulative Returns")
+        plt.ylabel("Portfolio Value")
+        plt.xlabel("Date")
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(backtest_path / "cumulative_returns.png")
+        plt.close()
 
 class SimpleBacktest:
     def __init__(
@@ -260,7 +284,10 @@ class SimpleBacktest:
         return gross.mean()
 
 
-data = load_backtest_data('rf_signal_v1', '20260224_202528', HORIZON)
+RUN_ID = "20260224_202528"
+EXPERIMENT = "rf_signal_v1"
+
+data = load_backtest_data(EXPERIMENT, RUN_ID, HORIZON)
 aligner = DataAligner(data['predictions'],data['prices'],data['returns'])
 combined_data, close_prices = aligner.align()
 
@@ -271,4 +298,5 @@ portfolio = constructor.construct(combined_data)
 backtester = SimpleBacktest(portfolio, close_prices)
 
 tes = backtester.run()
+tes.save(f"../training/artifacts/{EXPERIMENT}/{RUN_ID}")
 print(tes)
