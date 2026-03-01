@@ -1,93 +1,126 @@
 import streamlit as st
 import pandas as pd
-from pathlib import Path
-import json
-
-ARTIFACTS_DIR = Path('../training/artifacts')
-
-
-def load_experiment_summary():
-    rows = []
-    if not ARTIFACTS_DIR.exists():
-        return pd.DataFrame()
-
-    for experiment_dir in ARTIFACTS_DIR.iterdir():
-        if not experiment_dir.is_dir():
-            continue
-
-        best_sharpe = None
-        sharpe_list = []
-        ic_list = []
-
-        for run_dir in experiment_dir.iterdir():
-            metrics_path = run_dir / "backtest" / "metrics.json"
-            validation_path = run_dir / "analysis" / "validation_results.json"
-
-            if metrics_path.exists():
-                with open(metrics_path) as f:
-                    metrics = json.load(f)
-                sharpe = metrics.get("Sharpe Ratio")
-                if sharpe is not None:
-                    sharpe_list.append(sharpe)
-                    if best_sharpe is None or sharpe > best_sharpe:
-                        best_sharpe = sharpe
-
-            if validation_path.exists():
-                with open(validation_path) as f:
-                    val = json.load(f)
-                ic = val.get("rank_ic", {}).get("ic_mean")
-                if ic is not None:
-                    ic_list.append(ic)
-
-        if sharpe_list:
-            rows.append({
-                "Experiment": experiment_dir.name,
-                "Runs": len(sharpe_list),
-                "Best Sharpe": best_sharpe,
-                "Avg Sharpe": sum(sharpe_list) / len(sharpe_list),
-                "Avg IC": sum(ic_list) / len(ic_list) if ic_list else 0.0
-            })
-
-    return pd.DataFrame(rows)
+from utils.data_loader import load_all_experiment_metrics
 
 
 def render():
-    st.header("Overview")
-    df = load_experiment_summary()
+    st.header("📊 Experiment Overview")
+
+    with st.spinner("Loading experiments..."):
+        df = load_all_experiment_metrics()
 
     if df.empty:
-        st.warning("No experiments found.")
+        st.warning("No experiments found. Run training first.")
+        st.info("Expected directory structure: artifacts/experiment_name/run_id/")
         return
 
-    st.sidebar.subheader("Filters")
+    st.subheader("Summary Statistics")
+    col1, col2, col3, col4 = st.columns(4)
 
-    df["Avg IC"] = df["Avg IC"].fillna(0.0)
+    col1.metric("Total Experiments", df['experiment'].nunique())
+    col2.metric("Total Runs", len(df))
+    col3.metric("Avg IC", f"{df['ic_mean'].mean():.3f}" if 'ic_mean' in df.columns else "N/A")
+    col4.metric("Avg Sharpe", f"{df['sharpe_ratio'].mean():.2f}" if 'sharpe_ratio' in df.columns else "N/A")
 
-    ic_min = float(df["Avg IC"].min())
-    ic_max = float(df["Avg IC"].max())
+    # Filters
+    st.subheader("Filters")
+    col1, col2 = st.columns(2)
 
-    if ic_min == ic_max:
-        min_ic = ic_min
-        st.sidebar.text(f"Minimum Avg IC: {min_ic:.4f} (all experiments have same IC)")
-    else:
-        min_ic = st.sidebar.slider(
-            "Minimum Avg IC",
-            min_value=ic_min,
-            max_value=ic_max,
-            value=ic_min
+    with col1:
+        min_ic = st.slider(
+            "Minimum IC",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.0,
+            step=0.05
         )
 
-    df_filtered = df[df["Avg IC"] >= min_ic]
+    with col2:
+        min_sharpe = st.slider(
+            "Minimum Sharpe",
+            min_value=-2.0,
+            max_value=5.0,
+            value=0.0,
+            step=0.1
+        )
 
-    st.subheader("Experiment Summary")
+    if 'ic_mean' in df.columns:
+        df = df[df['ic_mean'] >= min_ic]
+    if 'sharpe_net' in df.columns:
+        df = df[df['sharpe_net'] >= min_sharpe]
+
+    st.subheader(f"Experiments ({len(df)} runs)")
+
+    if df.empty:
+        st.info("No experiments match the filters.")
+        return
+
+    display_df = df.copy()
+
+    if 'experiment' in display_df.columns:
+        display_df['experiment'] = display_df['experiment'].apply(lambda x: x.name if hasattr(x, 'name') else str(x))
+    if 'run' in display_df.columns:
+        display_df['run'] = display_df['run'].apply(lambda x: x.name if hasattr(x, 'name') else str(x))
+
+    if 'ic_mean' in display_df.columns:
+        display_df['ic_mean'] = display_df['ic_mean'].apply(lambda x: f"{x:.3f}" if pd.notna(x) else "N/A")
+    if 'sharpe_net' in display_df.columns:
+        display_df['sharpe_net'] = display_df['sharpe_net'].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "N/A")
+    if 'max_drawdown' in display_df.columns:
+        display_df['max_drawdown'] = display_df['max_drawdown'].apply(lambda x: f"{x:.1%}" if pd.notna(x) else "N/A")
+
+    display_df = display_df.rename(columns={
+        'experiment': 'Experiment',
+        'run': 'Run ID',
+        'ic_mean': 'Mean IC',
+        'sharpe_ratio': 'Net Sharpe',
+        'max_drawdown': 'Max Drawdown'
+    })
+
     st.dataframe(
-        df_filtered.sort_values("Best Sharpe", ascending=False),
-        use_container_width=True
+        display_df,
+        use_container_width=True,
+        height=400
     )
 
-    st.subheader("Global Stats")
-    col1, col2, col3 = st.columns(3)
+    st.subheader("🏆 Best Performers")
 
-    col1.metric("Total Experiments", len(df))
-    col2.metric("Average Sharpe", round(df["Avg Sharpe"].mean(), 3))
-    col3.metric("Average IC", round(df["Avg IC"].mean(), 4))
+    if 'sharpe_net' in df.columns and not df.empty:
+        top_runs = df.nlargest(5, 'sharpe_net')
+
+        for idx, row in top_runs.iterrows():
+            exp_name = row['experiment'].name if hasattr(row['experiment'], 'name') else str(row['experiment'])
+            run_name = row['run'].name if hasattr(row['run'], 'name') else str(row['run'])
+
+            with st.expander(f"#{idx + 1}: {exp_name} - {run_name}"):
+                col1, col2, col3 = st.columns(3)
+                col1.metric("IC", f"{row['ic_mean']:.3f}" if pd.notna(row.get('ic_mean')) else "N/A")
+                col2.metric("Sharpe", f"{row['sharpe_net']:.2f}" if pd.notna(row.get('sharpe_net')) else "N/A")
+                col3.metric("Drawdown", f"{row['max_drawdown']:.1%}" if pd.notna(row.get('max_drawdown')) else "N/A")
+
+                if st.button(f"View Details", key=f"view_{idx}"):
+                    st.session_state.selected_experiment = row['experiment']
+                    st.session_state.selected_run = row['run']
+                    st.session_state.page = "Backtest Results"
+                    st.rerun()
+
+    with st.expander("ℹ️ How to use this dashboard"):
+        st.markdown("""
+        **Overview Page (You are here):**
+        - View summary of all experiments
+        - Filter by IC or Sharpe ratio
+        - Identify best performers
+
+        **Experiment Details:**
+        - Deep dive into validation metrics
+        - View diagnostics and regime analysis
+
+        **Backtest Results:**
+        - View portfolio performance
+        - Cumulative returns charts
+        - Compare against benchmark
+
+        **Strategy Comparison:**
+        - Compare multiple strategies side-by-side
+        - Overlaid performance charts
+        """)
