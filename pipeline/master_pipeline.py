@@ -1,4 +1,4 @@
-from data_pipeline import MarketDataPipeline
+from pipeline.data_pipeline import MarketDataPipeline
 from analysis.orchestrator import AnalysisOrchestrator
 from training.orchestrator import TrainingOrchestrator
 from config.config import TRAINING_CONFIG, RUN_ID
@@ -6,7 +6,7 @@ from backtest.backtest_orchestrator import BacktestOrchestrator
 
 def run_pipeline(training_config=TRAINING_CONFIG):
 
-    data_pipeline = MarketDataPipeline()
+    data_pipeline = MarketDataPipeline(tickers=training_config['tickers'], run_id=training_config['run_id'])
     training_pipeline = TrainingOrchestrator(training_config)
 
     output_dir = data_pipeline.run()
@@ -19,4 +19,5 @@ def run_pipeline(training_config=TRAINING_CONFIG):
     backtest_orch = BacktestOrchestrator(training_config)
     backtest_orch.run()
 
-run_pipeline()
+    return training_pipeline, analysis_pipeline, backtest_orch
+

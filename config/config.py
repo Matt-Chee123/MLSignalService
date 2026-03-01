@@ -167,6 +167,7 @@ TRAINING_CONFIG = {
     "experiment_name": "gb_signal_v1",
     "run_id": RUN_ID,
     "horizon": HORIZON,
+    "tickers": TICKERS,
     "benchmark": '^GSPC',
     "strategy": 'long_only',
     "data": {

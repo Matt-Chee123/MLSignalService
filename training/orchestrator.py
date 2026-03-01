@@ -18,7 +18,6 @@ class TrainingOrchestrator:
     def __init__(self, config):
         self.config = config
         self.model_config = config['model']
-        self.data_config = config['data']
         self.training_config = config['training']
         self.tracker = ExperimentTracker(run_id=config['run_id'])
 

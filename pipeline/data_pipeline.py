@@ -11,14 +11,14 @@ from data.clean import clean_market_data
 class MarketDataPipeline:
 
     def __init__(self, tickers=TICKERS, start=START_DATE, end=END_DATE, interval=INTERVAL,
-                 raw_data_path=RAW_DATA_PATH, processed_data_path=PROCESSED_DATA_PATH,split_data_path=SPLIT_DATA_PATH, iterations=15, logging_level=logging.INFO):
+                 raw_data_path=RAW_DATA_PATH, processed_data_path=PROCESSED_DATA_PATH,split_data_path=SPLIT_DATA_PATH, iterations=15, logging_level=logging.INFO, run_id=RUN_ID):
         self.tickers = tickers
         self.start = start
         self.end = end
         self.interval = interval
-        self.raw_data_path = raw_data_path / RUN_ID
-        self.processed_data_path = processed_data_path / RUN_ID
-        self.split_data_path = split_data_path / RUN_ID
+        self.raw_data_path = raw_data_path / run_id
+        self.processed_data_path = processed_data_path / run_id
+        self.split_data_path = split_data_path / run_id
         self.iterations = iterations
 
         for d in [self.raw_data_path, self.processed_data_path, self.split_data_path]:
