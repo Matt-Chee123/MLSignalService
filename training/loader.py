@@ -21,5 +21,5 @@ def load_metadata(data_path):
 
 def load_live_data(data_path):
     data_dir = Path(data_path)
-    live_data_file = data_dir / "live_features.csv"
+    live_data_file = data_dir / "live/live_features.csv"
     return pd.read_csv(live_data_file)

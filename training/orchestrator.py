@@ -20,7 +20,7 @@ class TrainingOrchestrator:
         self.model_config = config['model']
         self.data_config = config['data']
         self.training_config = config['training']
-        self.tracker = ExperimentTracker(run_id=RUN_ID)
+        self.tracker = ExperimentTracker(run_id=config['run_id'])
 
 
         self.evaluator = Evaluator(
@@ -32,7 +32,7 @@ class TrainingOrchestrator:
 
         self.experiment_id = self.tracker.start_experiment(self.config)
 
-        self.run_id = RUN_ID
+        self.run_id = config['run_id']
         self.experiment_name = config.get("experiment_name", "default_experiment")
 
         self.base_output_dir = Path(

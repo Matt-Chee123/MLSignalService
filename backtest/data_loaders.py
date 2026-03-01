@@ -1,17 +1,16 @@
 from pathlib import Path
 import pandas as pd
 
-from config.backtest_config import HORIZON, BENCHMARK
 from data.fetch_data import fetch_universe
-from datetime import datetime, date, timedelta
+from datetime import datetime
 
 def format_date(date):
     dt_object = datetime.strptime(date, "%Y-%m-%d %H:%M:%S%z")
     return dt_object.strftime("%Y-%m-%d")
 
-def load_backtest_data(experiment, run_id, horizon):
+def load_backtest_data(experiment, run_id, horizon, benchmark):
     prediction_loader = PredictionLoader(experiment)
-    market_loader = MarketDataLoader(BENCHMARK)
+    market_loader = MarketDataLoader(benchmark)
 
     pred_data = prediction_loader.load_from_csv(run_id)
 

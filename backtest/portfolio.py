@@ -13,12 +13,9 @@ class PortfolioConstructor:
 
     def _long_only(self, data):
         portfolios = []
-
         for date, group in data.groupby('Date'):
             n = len(group)
-
-            long_n = int(n * self.long_pct)
-            short_n = int(n * self.short_pct)
+            long_n = int(n * self.long_pct) or 1
             sorted_group = group.sort_values('pred_label', ascending=True)
             longs = sorted_group.tail(long_n).copy()
             longs['weight'] = 1 / long_n
@@ -34,8 +31,8 @@ class PortfolioConstructor:
         for date, group in data.groupby('Date'):
             n = len(group)
 
-            long_n = int(n * self.long_pct)
-            short_n = int(n * self.short_pct)
+            long_n = int(n * self.long_pct) or 1
+            short_n = int(n * self.short_pct) or 1
             sorted_group = group.sort_values('pred_label', ascending=True)
             longs = sorted_group.tail(long_n).copy()
             shorts = sorted_group.head(short_n).copy()

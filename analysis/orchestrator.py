@@ -1,16 +1,12 @@
-from pathlib import Path
 from training.orchestrator import TrainingOrchestrator
-from config.config import TRAINING_CONFIG
 import json
-from analysis.feature_analysis import FeatureSelector, FeatureAnalyser
+from analysis.feature_analysis import FeatureAnalyser
 from analysis.validators import StatisticalValidator
 from analysis.diagnostics import ModelDiagnostics, RegimeAnalyser
 from analysis.visualisations import ReportGenerator
 
 
 class AnalysisOrchestrator:
-
-
     def __init__(self, training_orchestrator: TrainingOrchestrator):
 
         self.trainer = training_orchestrator
@@ -169,10 +165,7 @@ class AnalysisOrchestrator:
             results['regime_analyzer'] = self.run_regime_analysis()
         except Exception as e:
             print(f"⚠️  Error in regime analysis: {e}")
-#        try:
         results['feature_analyser'] = self.run_feature_analysis()
-        # except Exception as e:
-        #     print(f"⚠️  Error in feature analysis: {e}")
 
         try:
             self.generate_visualizations()

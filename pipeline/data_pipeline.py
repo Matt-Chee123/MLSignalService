@@ -81,7 +81,7 @@ class MarketDataPipeline:
         feature_engineer = FeatureEngineer()
         live_features = feature_engineer.build_features(live_clean)
 
-        live_dir = self.processed_data_path / "live"
+        live_dir = self.split_data_path / "live"
         live_dir.mkdir(exist_ok=True)
 
         live_features.to_csv(live_dir / "live_features.csv")
