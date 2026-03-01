@@ -4,7 +4,6 @@ from pathlib import Path
 
 class Trainer:
     def __init__(self, model_config, output_dir="./models/"):
-        #model config like {'model_type': things, 'hyperparams': {}}
         self.model_config = model_config
         self.model = get_model_from_config(model_config)
         self.output_dir = Path(output_dir)
@@ -18,3 +17,7 @@ class Trainer:
 
     def save_model(self, name='model.pkl'):
         joblib.dump(self.model, self.output_dir / name)
+
+    def load_model(self):
+        path = self.output_dir / "model.pkl"
+        self.model = joblib.load(path)

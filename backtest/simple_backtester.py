@@ -1,8 +1,3 @@
-from backtest.data_loaders import load_backtest_data
-from backtest.align_data import DataAligner
-from backtest.portfolio import PortfolioConstructor
-from config.backtest_config import HORIZON, BENCHMARK
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -54,7 +49,7 @@ class BacktestResults:
 
 class SimpleBacktest:
     def __init__(
-        self, portfolio, close_prices, horizon_months=3, risk_free_rate=0.02, initial_value=100000, benchmark=BENCHMARK):
+        self, portfolio, close_prices, horizon_months=3, risk_free_rate=0.02, initial_value=100000, benchmark='^GSPC'):
 
         self.portfolio = portfolio.copy().sort_index(level=["Date", "Ticker"])
         self.horizon_months = horizon_months
@@ -283,20 +278,3 @@ class SimpleBacktest:
 
         return gross.mean()
 
-
-RUN_ID = "20260224_202528"
-EXPERIMENT = "rf_signal_v1"
-
-data = load_backtest_data(EXPERIMENT, RUN_ID, HORIZON)
-aligner = DataAligner(data['predictions'],data['prices'],data['returns'])
-combined_data, close_prices = aligner.align()
-
-
-constructor = PortfolioConstructor(strategy='long_only')
-portfolio = constructor.construct(combined_data)
-
-backtester = SimpleBacktest(portfolio, close_prices)
-
-tes = backtester.run()
-tes.save(f"../training/artifacts/{EXPERIMENT}/{RUN_ID}")
-print(tes)

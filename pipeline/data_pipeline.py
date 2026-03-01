@@ -65,8 +65,34 @@ class MarketDataPipeline:
         self.logger.info(f"Created {len(splits)} train/test splits.")
         return splits, output_dir
 
+    def fetch_live_snapshot(self):
+
+        self.logger.info("Fetching live market snapshot...")
+
+        live_data = fetch_universe(
+            tickers=self.tickers,
+            start=self.start,
+            end=pd.Timestamp.today().strftime("%Y-%m-%d"),
+            interval=self.interval
+        )
+
+        live_clean = clean_market_data(live_data)
+
+        feature_engineer = FeatureEngineer()
+        live_features = feature_engineer.build_features(live_clean)
+
+        live_dir = self.processed_data_path / "live"
+        live_dir.mkdir(exist_ok=True)
+
+        live_features.to_csv(live_dir / "live_features.csv")
+
+        self.logger.info("Live snapshot saved.")
+
+        return live_features
+
     def run(self):
         raw_data = self.fetch_and_save()
         labeled_df = self.process_features_and_labels(raw_data)
         splits, output_dir = self.split_data(labeled_df)
+        live_features = self.fetch_live_snapshot()
         return output_dir

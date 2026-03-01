@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple, Any
 import pandas as pd
 import numpy as np
 
-from training.loader import load_splits, load_metadata
+from training.loader import load_splits, load_metadata, load_live_data
 from training.trainer import Trainer
 from training.evaluator import Evaluator
 from training import metrics as metric_lib
@@ -91,6 +91,7 @@ class TrainingOrchestrator:
     def load_data(self, data_dir):
         self.splits = load_splits(data_dir)
         self.metadata = load_metadata(data_dir)
+        self.live_data = load_live_data(data_dir)
 
 
     def run_shuffle_test(self):
@@ -200,7 +201,25 @@ class TrainingOrchestrator:
         model.fit(X_full, y_full)
         model.save_model()
 
-    def run_pipeline(self,data_dir):
+    def generate_live_signal(self):
+        self.logger.info("Generating live signal...")
+
+        model = Trainer(self.model_config, self.models_dir)
+        model.load_model()
+
+        X_live = self.live_data[self.feature_names]
+
+        preds = model.predict(X_live)
+
+        signal_df = self.live_data.copy()
+        signal_df["signal"] = preds
+
+
+        signal_df.to_csv(self.predictions_dir / "live_signal.csv", index=False)
+
+        self.logger.info("Live signal saved.")
+
+    def run_pipeline(self,data_dir, live_data=None):
         self.load_data(data_dir)
 
         self.run_cross_validation()
@@ -214,6 +233,8 @@ class TrainingOrchestrator:
         self.tracker.log_summary(summary_payload)
         if validation:
             self.train_full_model()
+            if self.live_data is not None:
+                self.generate_live_signal()
 
         model_path = str(self.models_dir)
         predictions_path = str(self.predictions_dir)

@@ -19,3 +19,7 @@ def load_metadata(data_path):
     mdata_file = data_dir / "splits_metadata.parquet"
     return pd.read_parquet(mdata_file)
 
+def load_live_data(data_path):
+    data_dir = Path(data_path)
+    live_data_file = data_dir / "live_features.csv"
+    return pd.read_csv(live_data_file)

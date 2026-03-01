@@ -28,7 +28,7 @@ def load_backtest_data(experiment, run_id, horizon):
     end = raw_end.strftime("%Y-%m-%d")
 
     market_data = market_loader.fetch_historical_data(tickers, start, end)
-    forward_returns = market_loader.compute_forward_returns(market_data, HORIZON)
+    forward_returns = market_loader.compute_forward_returns(market_data, horizon)
 
 
     return {
