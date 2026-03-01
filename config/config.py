@@ -137,33 +137,33 @@ HORIZON = 3
 
 INTERVAL = '1d'
 
-TRAINING_CONFIG = {
-    "experiment_name": "rf_signal_v1",
-    "run_id": RUN_ID,
-    "horizon": HORIZON,
-    "benchmark": '^GSPC',
-    "strategy": 'long_only',
-    "data": {
-        "dataset_path": "../data/datasets/run_20260215_192421"
-    },
-    "model": {
-        "model_type": "random_forest",
-        "hyperparams": {
-            "n_estimators": 250,
-            "max_depth": 6
-        }
-    },
-    "training": {
-        "output_dir": "../training/artifacts"
-    },
-    "metrics": [
-        "mse",
-        "r2",
-        "rank_ic"
-    ]
-}
+# TRAINING_CONFIG = {
+#     "experiment_name": "rf_signal_v1",
+#     "run_id": RUN_ID,
+#     "horizon": HORIZON,
+#     "benchmark": '^GSPC',
+#     "strategy": 'long_only',
+#     "data": {
+#         "dataset_path": "../data/datasets/run_20260215_192421"
+#     },
+#     "model": {
+#         "model_type": "random_forest",
+#         "hyperparams": {
+#             "n_estimators": 250,
+#             "max_depth": 6
+#         }
+#     },
+#     "training": {
+#         "output_dir": "../training/artifacts"
+#     },
+#     "metrics": [
+#         "mse",
+#         "r2",
+#         "rank_ic"
+#     ]
+# }
 
-TRAINING_CONFIG2 = {
+TRAINING_CONFIG = {
     "experiment_name": "gb_signal_v1",
     "run_id": RUN_ID,
     "horizon": HORIZON,

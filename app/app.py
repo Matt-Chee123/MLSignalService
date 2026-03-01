@@ -13,9 +13,7 @@ def main():
         index=['Overview', 'Experiment Details', 'Backtest Results', 'Strategy Comparison', 'Raw Data']
         .index(st.session_state.page)
     )
-
     st.session_state.page = page
-
     if page == 'Overview':
         overview.render()
     elif page == 'Experiment Details':
