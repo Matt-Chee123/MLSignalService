@@ -1,6 +1,9 @@
 import json
-from app.config import ARTIFACTS_DIR
-from pathlib import Path
+
+import pandas as pd
+
+from config import ARTIFACTS_DIR
+import streamlit as st
 
 
 def list_experiment():
@@ -13,18 +16,47 @@ def list_experiment():
 
 def list_runs(experiment):
     runs = []
-    run_dir = ARTIFACTS_DIR / experiment
-    for run in sorted(run_dir.iterdir()):
+    for run in sorted(experiment.iterdir()):
         if run.is_dir():
             runs.append(run)
 
     return runs
 
-def load_validation_results(experiment, run_id):
-    path = ARTIFACTS_DIR / experiment / run_id / 'metrics'
+def load_validation_results(run_id):
+    path = run_id / 'analysis' / 'validation_results.json'
+    if path.exists():
+        with open(path) as f:
+            return json.load(f)
+    return None
 
+def load_backtest_results(run_id):
+    path = run_id / 'backtest' / 'metrics.json'
+    st.write(path)
+    if path.exists():
+        with open(path) as f:
+            return json.load(f)
+    return None
 
-experiments = list_experiment()
+def load_backtest_returns(run_id):
+    path = run_id / 'backtest' / 'returns_timeseries.csv'
+    if path.exists():
+        return pd.read_csv(path)
+    return None
 
-for experiment in experiments:
-    list_runs(experiment)
+@st.cache_data
+def load_all_experiment_metrics():
+    rows = []
+    for exp in list_experiment():
+        for run in list_runs(exp):
+            val = load_validation_results(run)
+            bt = load_backtest_results(run)
+            if val and bt:
+                rows.append({
+                    "experiment": exp,
+                    "run": run,
+                    "ic_mean": val.get("rank_ic").get("ic_mean"),
+                    "bt_get": bt.get("Sharpe Ratio"),
+                    "max_drawdown": bt.get("Max Drawdown")
+                })
+    return pd.DataFrame(rows)
+
