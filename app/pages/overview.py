@@ -20,7 +20,7 @@ def render():
     col1.metric("Total Experiments", df['experiment'].nunique())
     col2.metric("Total Runs", len(df))
     col3.metric("Avg IC", f"{df['ic_mean'].mean():.3f}" if 'ic_mean' in df.columns else "N/A")
-    col4.metric("Avg Sharpe", f"{df['sharpe_ratio'].mean():.2f}" if 'sharpe_ratio' in df.columns else "N/A")
+    col4.metric("Avg Sharpe", f"{df['sharpe_net'].mean():.2f}" if 'sharpe_net' in df.columns else "N/A")
 
     # Filters
     st.subheader("Filters")

@@ -4,6 +4,19 @@ from training.orchestrator import TrainingOrchestrator
 from config.config import TRAINING_CONFIG, RUN_ID
 from backtest.backtest_orchestrator import BacktestOrchestrator
 
+import json
+import argparse
+from datetime import datetime
+
+def load_config(config_path):
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    config["run_id"] = timestamp
+
+    return config
+
 def run_pipeline(training_config=TRAINING_CONFIG):
 
     data_pipeline = MarketDataPipeline(tickers=training_config['tickers'], run_id=training_config['run_id'])
@@ -21,4 +34,19 @@ def run_pipeline(training_config=TRAINING_CONFIG):
 
     return training_pipeline, analysis_pipeline, backtest_orch
 
-run_pipeline()
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config",
+        type=str,
+        required=True,
+        help="Path to config JSON file"
+    )
+
+    args = parser.parse_args()
+
+    config = load_config(args.config)
+    run_pipeline(config)
