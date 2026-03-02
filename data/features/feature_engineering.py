@@ -107,6 +107,26 @@ class FeatureEngineer:
 
         return df
 
+    def add_sector_zscores(self, df):
+        target_metrics = ['pe_ratio', 'pb_ratio', 'rev_growth', 'profit_margins', 'roe', 'debt_equity', 'fcf']
+        for metric in target_metrics:
+            if metric not in df.columns:
+                continue
+
+            group = df.groupby(['Date', 'sector'])[metric]
+
+            m = group.transform('mean')
+            s = group.transform('std')
+
+            df[f'{metric}_sector_z'] = (df[metric] - m) / (s + 1e-6)
+        return df
+
+    def add_market_context(self, df):
+        df['log_market_cap'] = np.log(df['market_cap'] + 1)
+
+        df['market_cap_percentile'] = df.groupby('Date')['market_cap'].rank(pct=True)
+        return df
+
     def build_features(self, df):
         df = df.copy()
 
@@ -129,6 +149,8 @@ class FeatureEngineer:
         df = self.add_sma(df)
         df = self.add_ema(df)
         df = self.add_macd(df)
+        df = self.add_sector_zscores(df)
+        df = self.add_market_context(df)
 
         df = df.set_index(['Date', 'Ticker']).sort_index()
 

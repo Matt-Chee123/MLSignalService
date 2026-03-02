@@ -18,6 +18,18 @@ def fetch_stock_data(
     try:
         stock = yf.Ticker(ticker)
         df = stock.history(start=start, end=end, interval=interval)
+        info = stock.info
+        fundamentals = {
+            "market_cap": info.get("marketCap"),
+            "pe_ratio": info.get("forwardPE"),
+            "pb_ratio": info.get("priceToBook"),
+            "debt_equity": info.get("debtToEquity"),
+            "roe": info.get("returnOnEquity"),
+            "sector": info.get("sector"),
+            "rev_growth": info.get("revenueGrowth"),
+            "profit_margins": info.get("profitMargins"),
+            "fcf": info.get("freeCashflow")
+        }
 
         if df.empty:
             logger.warning(f"No data returned for ticker={ticker}")
@@ -27,6 +39,9 @@ def fetch_stock_data(
 
         df = df[["Date", "Open", "High", "Low", "Close", "Volume"]]
         df["Ticker"] = ticker
+
+        for key, value in fundamentals.items():
+            df[key] = value
 
         return df
 
@@ -74,3 +89,4 @@ def save_data(
         filepath = output_dir / f"{ticker}.csv"
         ticker_df.drop(columns="Ticker").to_csv(filepath, index=False)
         logger.info(f"Saved raw data for {ticker} → {filepath}")
+

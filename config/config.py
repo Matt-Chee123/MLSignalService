@@ -164,7 +164,7 @@ INTERVAL = '1d'
 # }
 
 TRAINING_CONFIG = {
-    "experiment_name": "gb_signal_v1",
+    "experiment_name": "rf_signal_v2",
     "run_id": RUN_ID,
     "horizon": HORIZON,
     "tickers": TICKERS,
@@ -174,7 +174,7 @@ TRAINING_CONFIG = {
         "dataset_path": "../data/datasets/run_20260215_192421"
     },
     "model": {
-        "model_type": "gradient_boosting",
+        "model_type": "random_forest",
         "hyperparams": {
             "n_estimators": 100,
             "learning_rate": 0.01

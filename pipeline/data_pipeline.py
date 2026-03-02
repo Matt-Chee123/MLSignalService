@@ -46,7 +46,6 @@ class MarketDataPipeline:
     def process_features_and_labels(self, raw_data: pd.DataFrame):
         self.logger.info("Cleaning market data...")
         clean_data = clean_market_data(raw_data)
-        print(clean_data.head())
         clean_data.to_csv(self.processed_data_path / "data.csv")
         self.logger.info("Building features...")
         feature_engineer = FeatureEngineer()
@@ -93,6 +92,9 @@ class MarketDataPipeline:
     def run(self):
         raw_data = self.fetch_and_save()
         labeled_df = self.process_features_and_labels(raw_data)
+        print("xxxxxxxxxxxxxxxxxxxxx")
+        print(labeled_df.head())
+        print("xxxxxxxxxxxxxxxxxxxx")
         splits, output_dir = self.split_data(labeled_df)
         live_features = self.fetch_live_snapshot()
         return output_dir
