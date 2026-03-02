@@ -1,5 +1,5 @@
 import streamlit as st
-from pages import overview, experiment, backtest, comparison, raw_data
+from pages import overview, experiment, backtest, comparison, raw_data, feature_analysis
 
 def main():
     st.title("ML Signal Experiment Dashboard")
@@ -9,8 +9,8 @@ def main():
 
     page = st.sidebar.selectbox(
         'Navigate',
-        ['Overview', 'Experiment Details', 'Backtest Results', 'Strategy Comparison', 'Raw Data'],
-        index=['Overview', 'Experiment Details', 'Backtest Results', 'Strategy Comparison', 'Raw Data']
+        ['Overview', 'Experiment Details', 'Backtest Results', 'Strategy Comparison', 'Feature Analysis', 'Raw Data'],
+        index=['Overview', 'Experiment Details', 'Backtest Results', 'Strategy Comparison', 'Feature Analysis', 'Raw Data']
         .index(st.session_state.page)
     )
     st.session_state.page = page
@@ -22,6 +22,8 @@ def main():
         backtest.render()
     elif page == 'Strategy Comparison':
         comparison.render()
+    elif page == 'Feature Analysis':
+        feature_analysis.render()
     else:
         raw_data.render()
 

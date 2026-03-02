@@ -118,3 +118,16 @@ def get_run_metadata(run_id):
         metadata['horizon'] = config.get('horizon', 0)
 
     return metadata
+
+def load_feature_importance(run_id):
+    path = run_id / "analysis" / "feature_importance.parquet"
+    if path.exists():
+        return pd.read_parquet(path)
+    return None
+
+def load_feature_analysis(run_id):
+    path = run_id / "analysis" / "feature_analysis.json"
+    if path.exists():
+        with open(path) as f:
+            return json.load(f)
+    return None
