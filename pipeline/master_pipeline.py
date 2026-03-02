@@ -21,3 +21,4 @@ def run_pipeline(training_config=TRAINING_CONFIG):
 
     return training_pipeline, analysis_pipeline, backtest_orch
 
+run_pipeline()
