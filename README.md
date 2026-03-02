@@ -89,3 +89,8 @@ pipeline cleaning and validation was essential to avoid accidentally “seeing t
 - Making the framework config-driven and storing artifacts allowed me to experiment in a more structured way instead of randomly tweaking models
 
 - More complex models don't automatically mean improved performance 
+
+## Extras
+
+- Have implemented some fundamentals and sector benchmarks for the data due to the longer 
+horizon
