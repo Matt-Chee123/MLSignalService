@@ -8,7 +8,7 @@ from utils.data_loader import list_experiment, list_runs, load_feature_importanc
 
 def render():
 
-    st.header("📊 Feature Analysis")
+    st.header("Feature Analysis")
 
     experiments = list_experiment()
     if not experiments:
@@ -43,7 +43,7 @@ def render():
         st.warning("Feature analysis JSON not found.")
         return
 
-    st.subheader("📈 Tree-Based Feature Importance")
+    st.subheader("Tree-Based Feature Importance")
 
     importance_df = importance_df.sort_values("importance", ascending=False)
 
@@ -67,7 +67,7 @@ def render():
 
     st.dataframe(top_features, use_container_width=True)
 
-    st.subheader("📦 Feature Group Analysis")
+    st.subheader("Feature Group Analysis")
 
     group_stats = analysis_json.get("group_stats", {})
     if group_stats:
@@ -90,7 +90,7 @@ def render():
         st.plotly_chart(fig2, use_container_width=True)
         st.dataframe(group_df, use_container_width=True)
 
-    st.subheader("🎯 Feature Reduction Opportunities")
+    st.subheader("Feature Reduction Opportunities")
 
     reduction = analysis_json.get("feature_reduction", {})
     total_features = len(importance_df)
@@ -102,7 +102,7 @@ def render():
         )
         st.write(features)
 
-    st.subheader("⚠️ Highly Correlated Features")
+    st.subheader("Highly Correlated Features")
 
     redundant = analysis_json.get("redundant_pairs", [])
     if redundant:
