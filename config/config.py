@@ -164,7 +164,7 @@ INTERVAL = '1d'
 # }
 
 TRAINING_CONFIG = {
-    "experiment_name": "gb_signal_v1",
+    "experiment_name": "gb_signal_v2",
     "run_id": RUN_ID,
     "horizon": HORIZON,
     "tickers": TICKERS,

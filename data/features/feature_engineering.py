@@ -151,6 +151,7 @@ class FeatureEngineer:
         df = self.add_macd(df)
         df = self.add_sector_zscores(df)
         df = self.add_market_context(df)
+        df = df.drop(columns=['sector'])
 
         df = df.set_index(['Date', 'Ticker']).sort_index()
 

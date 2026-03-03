@@ -34,19 +34,19 @@ def run_pipeline(training_config=TRAINING_CONFIG):
 
     return training_pipeline, analysis_pipeline, backtest_orch
 
+run_pipeline()
 
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--config",
-        type=str,
-        required=True,
-        help="Path to config JSON file"
-    )
-
-    args = parser.parse_args()
-
-    config = load_config(args.config)
-    run_pipeline(config)
+# if __name__ == "__main__":
+#
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument(
+#         "--config",
+#         type=str,
+#         required=True,
+#         help="Path to config JSON file"
+#     )
+#
+#     args = parser.parse_args()
+#
+#     config = load_config(args.config)
+#     run_pipeline(config)

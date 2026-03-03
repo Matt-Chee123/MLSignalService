@@ -59,7 +59,8 @@ Interactive Dashboard
    ├─ Overview
    ├─ Experiment Details
    ├─ Backtest Results
-   └─ Experiment Comparison
+   ├─ Experiment Comparison
+   └─ Feature Analysis
 
 ## Quickstart
 
@@ -77,6 +78,7 @@ streamlit run app.py
 ![Experiment Details](screenshots/experiment.png)
 ![Backtest Results](screenshots/backtest.png)
 ![Experiment Comparison](screenshots/comparison.png)
+![Feature Analysis](screenshots/feature_analysis.png)
 
 ## What I learned
 
