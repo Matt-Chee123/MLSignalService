@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from pathlib import Path
 
 class DataSplitter:
     def __init__(self, window_size=2, horizon=3, iterations=15, output_path='.datasets'):

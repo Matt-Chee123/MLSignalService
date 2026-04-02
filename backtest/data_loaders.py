@@ -1,7 +1,7 @@
 from pathlib import Path
 import pandas as pd
 
-from data.fetch_data import fetch_universe
+from data_pipeline.fetch_data import fetch_universe
 from datetime import datetime
 
 def format_date(date):
