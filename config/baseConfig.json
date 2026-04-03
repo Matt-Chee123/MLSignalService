@@ -1,0 +1,42 @@
+{
+    "experiment_name": "test_experiment",
+    "run_id": "1",
+    "horizon": 3,
+    "tickers": [
+                "PG",
+                "KO",
+                "COST",
+                "JNJ",
+                "UNH",
+                "LLY",
+                "AAPL",
+                "MSFT",
+                "NVDA",
+                "GOOGL",
+                "META",
+                "AVGO"
+              ],
+    "benchmark": ",^GSPC",
+    "strategy": "long_only",
+    "data": {
+        "dataset_path": "../data/datasets/run_20260215_192421",
+        "end_date": "today",
+        "lookback_days": 1825,
+        "interval": "1d"
+    },
+    "model": {
+        "model_type": "random_forest",
+        "hyperparams": {
+            "n_estimators": 500,
+            "max_depth": "None"
+        }
+    },
+    "training": {
+        "output_dir": "../training/artifacts"
+    },
+    "metrics": [
+        "mse",
+        "r2",
+        "rank_ic"
+    ]
+}

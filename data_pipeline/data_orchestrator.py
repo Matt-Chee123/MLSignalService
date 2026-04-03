@@ -3,19 +3,19 @@ import pandas as pd
 from config.config import TICKERS, START_DATE, END_DATE, RAW_DATA_PATH, INTERVAL, PROCESSED_DATA_PATH, SPLIT_DATA_PATH, RUN_ID, HORIZON
 from data_pipeline.fetch_data import fetch_universe, save_data
 from data_pipeline.split import DataSplitter
-from data.features.feature_engineering import FeatureEngineer
-from data.labels.labels import LabelGenerator
+from data_pipeline.feature_engineering import FeatureEngineer
+from data_pipeline.labels import LabelGenerator
 from data_pipeline.clean import clean_market_data
 
 
 class MarketDataPipeline:
 
-    def __init__(self, tickers=TICKERS, start=START_DATE, end=END_DATE, interval=INTERVAL,
+    def __init__(self, config,tickers=TICKERS, start=START_DATE, end=END_DATE, interval=INTERVAL,
                  raw_data_path=RAW_DATA_PATH, processed_data_path=PROCESSED_DATA_PATH,split_data_path=SPLIT_DATA_PATH, iterations=15, logging_level=logging.INFO, run_id=RUN_ID):
-        self.tickers = tickers
-        self.start = start
-        self.end = end
-        self.interval = interval
+        self.tickers = config['tickers']
+        self.start = config['data']['start_date']
+        self.end = config['data']['end_date']
+        self.interval = config['data']['interval']
         self.raw_data_path = raw_data_path / run_id
         self.processed_data_path = processed_data_path / run_id
         self.split_data_path = split_data_path / run_id
@@ -98,3 +98,5 @@ class MarketDataPipeline:
         splits, output_dir = self.split_data(labeled_df)
         live_features = self.fetch_live_snapshot()
         return output_dir
+
+

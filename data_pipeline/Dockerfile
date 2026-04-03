@@ -2,6 +2,7 @@ FROM python:3.12.4-slim
 WORKDIR /app
 
 COPY data_pipeline/requirements.txt ./
+COPY config/loader.py ./config/
 
 RUN pip install --no-cache-dir -r requirements.txt
 
