@@ -28,3 +28,16 @@ services:
     depends_on:
       data-pipeline:
         condition: service_completed_successfully
+  analysis-pipeline:
+    build:
+      context: .
+      dockerfile: /analysis/Dockerfile
+    container_name: analysis-pipeline
+    environment:
+      - ROLE=CONSUMER
+    volumes:
+      - ml-data:/data
+      - ml-data:/training
+    depends_on:
+      training-pipeline:
+        condition: service_completed_successfully

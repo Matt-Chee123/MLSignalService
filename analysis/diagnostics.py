@@ -4,9 +4,6 @@ from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from scipy import stats as sp_stats
 
-from training.metrics import cumulative_return, max_drawdown
-from training.loader import load_splits
-
 @dataclass
 class RegimeAnalysis:
     regime_df: pd.DataFrame
