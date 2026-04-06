@@ -1,6 +1,5 @@
 {
     "experiment_name": "test_experiment",
-    "run_id": "1",
     "horizon": 3,
     "tickers": [
                 "PG",
@@ -19,10 +18,13 @@
     "benchmark": ",^GSPC",
     "strategy": "long_only",
     "data": {
-        "dataset_path": "../data/datasets/run_20260215_192421",
         "end_date": "today",
         "lookback_days": 1825,
-        "interval": "1d"
+        "interval": "1d",
+        "splits": 15,
+        "raw_data_path": "/data/raw/",
+        "processed_data_path": "/data/processed/",
+        "split_data_path": "/data/datasets/"
     },
     "model": {
         "model_type": "random_forest",
@@ -32,7 +34,7 @@
         }
     },
     "training": {
-        "output_dir": "../training/artifacts"
+        "output_dir": "/training/artifacts"
     },
     "metrics": [
         "mse",

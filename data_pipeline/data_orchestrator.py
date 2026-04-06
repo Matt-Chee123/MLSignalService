@@ -1,25 +1,24 @@
 import logging
 import pandas as pd
-from config.config import TICKERS, START_DATE, END_DATE, RAW_DATA_PATH, INTERVAL, PROCESSED_DATA_PATH, SPLIT_DATA_PATH, RUN_ID, HORIZON
 from data_pipeline.fetch_data import fetch_universe, save_data
 from data_pipeline.split import DataSplitter
 from data_pipeline.feature_engineering import FeatureEngineer
 from data_pipeline.labels import LabelGenerator
 from data_pipeline.clean import clean_market_data
-
+from config.loader import load_config
 
 class MarketDataPipeline:
 
-    def __init__(self, config,tickers=TICKERS, start=START_DATE, end=END_DATE, interval=INTERVAL,
-                 raw_data_path=RAW_DATA_PATH, processed_data_path=PROCESSED_DATA_PATH,split_data_path=SPLIT_DATA_PATH, iterations=15, logging_level=logging.INFO, run_id=RUN_ID):
+    def __init__(self, config, logging_level=logging.INFO):
         self.tickers = config['tickers']
         self.start = config['data']['start_date']
         self.end = config['data']['end_date']
         self.interval = config['data']['interval']
-        self.raw_data_path = raw_data_path / run_id
-        self.processed_data_path = processed_data_path / run_id
-        self.split_data_path = split_data_path / run_id
-        self.iterations = iterations
+        self.raw_data_path = config['data']['raw_data_path']
+        self.processed_data_path = config['data']['processed_data_path']
+        self.split_data_path = config['data']['split_data_path']
+        self.iterations = config['data']['splits']
+        self.horizon = config['horizon']
 
         for d in [self.raw_data_path, self.processed_data_path, self.split_data_path]:
             d.mkdir(parents=True, exist_ok=True)
@@ -58,7 +57,7 @@ class MarketDataPipeline:
 
     def split_data(self, labeled_df: pd.DataFrame):
         self.logger.info(f"Splitting data into {self.iterations} iterations...")
-        splitter = DataSplitter(iterations=self.iterations, horizon=HORIZON)
+        splitter = DataSplitter(iterations=self.iterations, horizon=self.horizon)
         splits = splitter.split(labeled_df)
         output_dir = splitter.save_splits(splits, self.split_data_path)
         self.logger.info(f"Created {len(splits)} train/test splits.")
@@ -92,11 +91,11 @@ class MarketDataPipeline:
     def run(self):
         raw_data = self.fetch_and_save()
         labeled_df = self.process_features_and_labels(raw_data)
-        print("xxxxxxxxxxxxxxxxxxxxx")
-        print(labeled_df.head())
-        print("xxxxxxxxxxxxxxxxxxxx")
         splits, output_dir = self.split_data(labeled_df)
         live_features = self.fetch_live_snapshot()
         return output_dir
 
-
+if __name__ == "__main__":
+    config = load_config()
+    data_pipeline = MarketDataPipeline(config)
+    output = data_pipeline.run()
