@@ -6,6 +6,7 @@ from data_pipeline.feature_engineering import FeatureEngineer
 from data_pipeline.labels import LabelGenerator
 from data_pipeline.clean import clean_market_data
 from config.loader import load_config
+from pathlib import Path
 
 class MarketDataPipeline:
 
@@ -14,9 +15,9 @@ class MarketDataPipeline:
         self.start = config['data']['start_date']
         self.end = config['data']['end_date']
         self.interval = config['data']['interval']
-        self.raw_data_path = config['data']['raw_data_path']
-        self.processed_data_path = config['data']['processed_data_path']
-        self.split_data_path = config['data']['split_data_path']
+        self.raw_data_path = Path(config['data']['raw_data_path'])
+        self.processed_data_path = Path(config['data']['processed_data_path'])
+        self.split_data_path = Path(config['data']['split_data_path'])
         self.iterations = config['data']['splits']
         self.horizon = config['horizon']
 

@@ -1,0 +1,30 @@
+version: "3.9"
+
+volumes:
+  ml-data:
+  ml-training:
+
+services:
+  data-pipeline:
+    build:
+      context: .
+      dockerfile: /data_pipeline/Dockerfile
+    container_name: data-pipeline
+    environment:
+      - ROLE=PRODUCER
+    volumes:
+      - ml-data:/data
+      - ml-training:/training
+  training-pipeline:
+    build:
+      context: .
+      dockerfile: /training/Dockerfile
+    container_name: training-pipeline
+    environment:
+      - ROLE=CONSUMER
+    volumes:
+      - ml-data:/data
+      - ml-training:/training
+    depends_on:
+      data-pipeline:
+        condition: service_completed_successfully

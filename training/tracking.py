@@ -90,7 +90,7 @@ class ExperimentTracker:
                 name,
                 model_type,
                 dataset_path,
-                json.dumps(config),
+                json.dumps(config, default=str),
                 datetime.utcnow().isoformat(),
             ),
         )
@@ -114,7 +114,7 @@ class ExperimentTracker:
             INSERT INTO summaries (experiment_id, summary_json)
             VALUES (?, ?)
             """,
-            (self.run_id, json.dumps(summary)),
+            (self.run_id, json.dumps(summary, default=str)),
         )
         self.conn.commit()
 

@@ -1,17 +1,14 @@
 import logging
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
-
 import pandas as pd
 import numpy as np
-
+from config.loader import load_config
 from training.loader import load_splits, load_metadata, load_live_data
 from training.trainer import Trainer
 from training.evaluator import Evaluator
 from training import metrics as metric_lib
-from config.config import TRAINING_CONFIG, RUN_ID
-from analysis.tracking import ExperimentTracker
+from training.tracking import ExperimentTracker
 
 
 class TrainingOrchestrator:
@@ -247,3 +244,7 @@ class TrainingOrchestrator:
         )
         self.tracker.close()
 
+if __name__ == "__main__":
+    config = load_config()
+    training_orchestrator = TrainingOrchestrator(config)
+    training_orchestrator.run_pipeline(config['data']['split_data_path'])
