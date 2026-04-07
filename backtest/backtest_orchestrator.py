@@ -2,6 +2,8 @@ from backtest.align_data import DataAligner
 from backtest.data_loaders import load_backtest_data
 from backtest.portfolio import PortfolioConstructor
 from backtest.simple_backtester import SimpleBacktest
+from config.loader import load_config
+
 
 class BacktestOrchestrator:
     def __init__(self, config):
@@ -23,3 +25,8 @@ class BacktestOrchestrator:
 
         tes = backtester.run()
         tes.save(f"../training/artifacts/{self.experiment}/{self.run_id}")
+
+if __name__ == "__main__":
+    config = load_config()
+    data_pipeline = BacktestOrchestrator(config)
+    data_pipeline.run()

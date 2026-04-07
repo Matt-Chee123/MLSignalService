@@ -4,24 +4,15 @@
     "tickers": [
                 "PG",
                 "KO",
-                "COST",
-                "JNJ",
-                "UNH",
-                "LLY",
-                "AAPL",
-                "MSFT",
-                "NVDA",
-                "GOOGL",
-                "META",
-                "AVGO"
+                "COST"
               ],
-    "benchmark": ",^GSPC",
+    "benchmark": "^GSPC",
     "strategy": "long_only",
     "data": {
         "end_date": "today",
         "lookback_days": 1825,
         "interval": "1d",
-        "splits": 15,
+        "splits": 2,
         "raw_data_path": "/data/raw/",
         "processed_data_path": "/data/processed/",
         "split_data_path": "/data/datasets/"

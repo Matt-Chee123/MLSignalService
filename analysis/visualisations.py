@@ -6,7 +6,6 @@ import seaborn as sns
 from typing import List, Dict, Optional, Tuple
 from pathlib import Path
 from scipy import stats as sp_stats
-from training.loader import load_splits
 
 sns.set_style("whitegrid")
 plt.rcParams['figure.dpi'] = 100

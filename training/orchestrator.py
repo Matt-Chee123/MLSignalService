@@ -1,5 +1,5 @@
 import logging
-import json
+import pickle, json
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -9,7 +9,6 @@ from training.trainer import Trainer
 from training.evaluator import Evaluator
 from training import metrics as metric_lib
 from training.tracking import ExperimentTracker
-
 
 class TrainingOrchestrator:
     def __init__(self, config):
@@ -243,6 +242,34 @@ class TrainingOrchestrator:
             analysis_path=str(self.analysis_dir)
         )
         self.tracker.close()
+        pd.DataFrame(self.split_results).to_parquet(self.metrics_dir / "split_results.parquet")
+
+        if hasattr(self, "shuffle_results"):
+            pd.DataFrame(self.shuffle_results).to_parquet(self.metrics_dir / "shuffle_results.parquet")
+
+        with open(self.run_dir / "feature_names.json", "w") as f:
+            json.dump(self.feature_names, f)
+
+        last = self.last_split
+        train_df = last["X_train"].copy()
+        train_df["label"] = last["y_train"]
+        train_df["_split"] = "train"
+        test_df = last["X_test"].copy()
+        test_df["label"] = last["y_test"]
+        test_df["_split"] = "test"
+        pd.concat([train_df, test_df]).to_parquet(self.run_dir / "last_split.parquet")
+
+        with open(self.models_dir / "last_split_model.pkl", "wb") as f:
+            pickle.dump(last["model"], f)
+
+        for i, (train, test) in enumerate(self.splits):
+            train.to_parquet(self.run_dir / f"split_{i}_train.parquet")
+            test.to_parquet(self.run_dir / f"split_{i}_test.parquet")
+
+        with open(self.run_dir / "splits_count.json", "w") as f:
+            json.dump({"n_splits": len(self.splits)}, f)
+
+        print(self.run_dir)
 
 if __name__ == "__main__":
     config = load_config()

@@ -25,6 +25,13 @@ def load_config():
 
     config = resolve_hyperparams(config)
     config = resolve_paths(config)
+
+    experiment_name = config.get("experiment_name", "default_experiment")
+    base_output_dir = Path(config['training'].get("output_dir", "./artifacts"))
+
+    run_dir = base_output_dir / experiment_name / config['run_id']
+    config['run_dir'] = str(run_dir)
+
     return config
 
 def resolve_dates(config):

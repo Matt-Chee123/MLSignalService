@@ -1,19 +1,60 @@
-from training.orchestrator import TrainingOrchestrator
-import json
+import pickle, json
+import pandas as pd
 from analysis.feature_analysis import FeatureAnalyser
 from analysis.validators import StatisticalValidator
 from analysis.diagnostics import ModelDiagnostics, RegimeAnalyser
 from analysis.visualisations import ReportGenerator
+from pathlib import Path
+from config.loader import load_config
 
 
 class AnalysisOrchestrator:
-    def __init__(self, training_orchestrator: TrainingOrchestrator):
+    def __init__(self, run_dir: str):
 
-        self.trainer = training_orchestrator
-        self.analysis_dir = self.trainer.run_dir / "analysis"
+        self.run_dir = Path(run_dir)
+        self.analysis_dir = self.run_dir / "analysis"
         self.analysis_dir.mkdir(exist_ok=True)
+        metrics_dir = self.run_dir / "metrics"
 
-        self.report_gen = ReportGenerator(self.trainer.metrics_dir)
+        split_df = pd.read_parquet(metrics_dir / "split_results.parquet")
+        self.split_results = split_df.to_dict(orient="records")
+
+        shuffle_path = metrics_dir / "shuffle_results.parquet"
+        self.shuffle_results = (
+            pd.read_parquet(shuffle_path).to_dict(orient="records")
+            if shuffle_path.exists() else None
+        )
+
+        with open(self.run_dir / "feature_names.json") as f:
+            self.feature_names = json.load(f)
+
+        data = pd.read_parquet(self.run_dir / "last_split.parquet")
+        train = data[data["_split"] == "train"].drop(columns=["_split"])
+        test  = data[data["_split"] == "test"].drop(columns=["_split"])
+
+        with open(self.run_dir / "models" / "last_split_model.pkl", "rb") as f:
+            model = pickle.load(f)
+
+        self.last_split = {
+            "model":   model,
+            "X_train": train.drop(columns=["label"]),
+            "y_train": train["label"],
+            "X_test":  test.drop(columns=["label"]),
+            "y_test":  test["label"],
+        }
+
+        self.report_gen = ReportGenerator(metrics_dir)
+
+        with open(self.run_dir / "splits_count.json") as f:
+            n = json.load(f)["n_splits"]
+
+        self.splits = [
+            (
+                pd.read_parquet(self.run_dir / f"split_{i}_train.parquet"),
+                pd.read_parquet(self.run_dir / f"split_{i}_test.parquet"),
+            )
+            for i in range(n)
+        ]
 
     def run_statistical_validation(self):
         print("\n" + "="*70)
@@ -21,8 +62,8 @@ class AnalysisOrchestrator:
         print("="*70)
 
         validator = StatisticalValidator(
-            split_results=self.trainer.split_results,
-            shuffle_results=self.trainer.shuffle_results if hasattr(self.trainer, 'shuffle_results') else None
+            split_results=self.split_results,
+            shuffle_results=self.shuffle_results
         )
         validator.print_validation_report(metric='rank_ic')
 
@@ -37,8 +78,8 @@ class AnalysisOrchestrator:
         print("="*70)
 
         diagnostics = ModelDiagnostics(
-            split_results=self.trainer.split_results,
-            shuffle_results=self.trainer.shuffle_results if hasattr(self.trainer, 'shuffle_results') else None
+            split_results=self.split_results,
+            shuffle_results=self.shuffle_results
         )
 
         diagnostics.print_diagnostic_report()
@@ -75,7 +116,7 @@ class AnalysisOrchestrator:
         print("RUNNING REGIME ANALYSIS")
         print("="*70)
 
-        regime_analyzer = RegimeAnalyser(self.trainer.splits,self.trainer.split_results)
+        regime_analyzer = RegimeAnalyser(self.splits,self.split_results)
 
         regime_analyzer.print_regime_report(ic_threshold=0.3)
 
@@ -90,10 +131,10 @@ class AnalysisOrchestrator:
         print("RUNNING FEATURE ANALYSIS")
         print("="*70)
 
-        last_split = self.trainer.last_split
+        last_split = self.last_split
         analyser = FeatureAnalyser(
             model=last_split['model'],
-            feature_names=self.trainer.feature_names,
+            feature_names=self.feature_names,
             X_train=last_split['X_train'],
             y_train=last_split['y_train'],
             X_test=last_split['X_test'],
@@ -129,8 +170,8 @@ class AnalysisOrchestrator:
 
         import pandas as pd
 
-        split_df = pd.DataFrame(self.trainer.split_results)
-        shuffle_df = pd.DataFrame(self.trainer.shuffle_results) if hasattr(self.trainer, 'shuffle_results') else None
+        split_df = pd.DataFrame(self.split_results)
+        shuffle_df = pd.DataFrame(self.shuffle_results)
 
         if shuffle_df is not None:
             saved_plots = self.report_gen.generate_validation_report(
@@ -172,13 +213,10 @@ class AnalysisOrchestrator:
         except Exception as e:
             print(f"⚠️  Error generating visualizations: {e}")
 
-        print("\n" + "✅ " + "="*66)
-        print("ANALYSIS COMPLETE")
-        print("="*68)
-        print(f"\nAll results saved to: {self.trainer.run_dir}")
-        print(f"  - Metrics: {self.trainer.metrics_dir}")
-        print(f"  - Analysis: {self.analysis_dir}")
-        print(f"  - Logs: {self.trainer.logs_dir}")
-
         return results
 
+if __name__ == "__main__":
+    config = load_config()
+    print(config)
+    orchestrator = AnalysisOrchestrator(config['run_dir'])
+    orchestrator.run_full_analysis()
