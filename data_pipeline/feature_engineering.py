@@ -1,26 +1,19 @@
 import numpy as np
 import pandas as pd
 import pandas_ta as ta
-
+import json
 
 class FeatureEngineer:
-    def __init__(self, return_windows=[1, 5, 21, 63, 126],
-                 volatility_windows=[5, 21, 63, 126],
-                 momentum_windows=[5, 21, 63, 126, 252],
-                 lags=[1, 5, 21],
-                 rsi_windows=[14, 21],
-                 sma_windows=[50, 100, 200],
-                 ema_windows=[50, 100, 200],
-                 macd_params=[(12, 26, 9)]):
+    def __init__(self, config):
 
-        self.return_windows = return_windows
-        self.volatility_windows = volatility_windows
-        self.momentum_windows = momentum_windows
-        self.lags = lags
-        self.rsi_windows = rsi_windows
-        self.sma_windows = sma_windows
-        self.ema_windows = ema_windows
-        self.macd_params = macd_params
+        self.return_windows = config['return_windows']
+        self.volatility_windows = config['volatility_windows']
+        self.momentum_windows = config['momentum_windows']
+        self.lags = config['lags']
+        self.rsi_windows = config['rsi_windows']
+        self.sma_windows = config['sma_windows']
+        self.ema_windows = config['ema_windows']
+        self.macd_params = [tuple(x) for x in config["macd_params"]]
 
     def add_log_return(self, df):
         for window in self.return_windows:

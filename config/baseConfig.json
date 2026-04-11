@@ -24,6 +24,16 @@
             "max_depth": "None"
         }
     },
+    "features": {
+        "return_windows": [1, 5, 21, 63, 126],
+        "volatility_windows": [5, 21, 63, 126],
+        "momentum_windows": [5, 21, 63, 126, 252],
+        "lags": [1, 5, 21],
+        "rsi_windows": [14, 21],
+        "sma_windows": [50, 100, 200],
+        "ema_windows": [50, 100, 200],
+        "macd_params": [[12, 26, 9]]
+    },
     "training": {
         "output_dir": "/training/artifacts"
     },

@@ -11,6 +11,7 @@ from pathlib import Path
 class MarketDataPipeline:
 
     def __init__(self, config, logging_level=logging.INFO):
+        self.features = config['features']
         self.tickers = config['tickers']
         self.start = config['data']['start_date']
         self.end = config['data']['end_date']
@@ -48,7 +49,7 @@ class MarketDataPipeline:
         clean_data = clean_market_data(raw_data)
         clean_data.to_csv(self.processed_data_path / "data.csv")
         self.logger.info("Building features...")
-        feature_engineer = FeatureEngineer()
+        feature_engineer = FeatureEngineer(self.features)
         feature_df = feature_engineer.build_features(clean_data)
         self.logger.info("Adding labels...")
         label_gen = LabelGenerator()
