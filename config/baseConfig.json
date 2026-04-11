@@ -41,5 +41,9 @@
         "mse",
         "r2",
         "rank_ic"
-    ]
+    ],
+    "s3": {
+        "upload": true,
+        "bucket": "ml-signal-service"
+    }
 }

@@ -20,8 +20,13 @@ services:
       context: .
       dockerfile: /training/Dockerfile
     container_name: training-pipeline
+    env_file:
+      - .env
     environment:
       - ROLE=CONSUMER
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
     volumes:
       - ml-data:/data
       - ./training:/training

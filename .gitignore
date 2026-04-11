@@ -1,6 +1,7 @@
 ProjectOverview.txt
 ProjectRoadmap.txt
 .venv
+.env
 pyvenv.cfg
 /data/datasets
 /data/raw

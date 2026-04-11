@@ -9,6 +9,8 @@ from training.trainer import Trainer
 from training.evaluator import Evaluator
 from training import metrics as metric_lib
 from training.tracking import ExperimentTracker
+from training.artifact_manifest import ArtifactManifest
+import boto3
 
 class TrainingOrchestrator:
     def __init__(self, config):
@@ -17,6 +19,8 @@ class TrainingOrchestrator:
         self.training_config = config['training']
         self.tracker = ExperimentTracker(run_id=config['run_id'])
 
+        self.s3 = boto3.client('s3')
+        self.upload = config['s3']['upload']
 
         self.evaluator = Evaluator(
             metrics={
@@ -46,6 +50,7 @@ class TrainingOrchestrator:
             d.mkdir(parents=True, exist_ok=True)
 
         self.logger = self._init_logger()
+        self.manifest = ArtifactManifest(self.run_dir, self.run_id)
 
         self.splits = None
         self.split_results = []
@@ -215,6 +220,32 @@ class TrainingOrchestrator:
 
         self.logger.info("Live signal saved.")
 
+    def push_to_s3(self, upload=True):
+        if not upload:
+            return
+
+        manifest = self.manifest.load_manifest()
+
+        bucket = self.config["s3"]["bucket"]
+        prefix = f"{self.experiment_name}/{self.run_id}/"
+
+        for name, artifact in manifest["artifacts"].items():
+            if not artifact.get("upload", False):
+                continue
+
+            rel_path = artifact["path"]
+            local_path = self.run_dir / rel_path
+
+            if local_path.is_dir():
+                for file in local_path.rglob("*"):
+                    if file.is_file():
+                        key = prefix + str(file.relative_to(self.run_dir))
+                        self.s3.upload_file(str(file), bucket, key)
+            else:
+                key = prefix + rel_path
+                self.s3.upload_file(str(local_path), bucket, key)
+
+
     def run_pipeline(self,data_dir, live_data=None):
         self.load_data(data_dir)
 
@@ -276,6 +307,9 @@ class TrainingOrchestrator:
         with open(self.data_dir / "splits_count.json", "w") as f:
             json.dump({"n_splits": len(self.splits)}, f)
 
+        self.manifest.build_manifest()
+        self.manifest.save_manifest()
+        self.push_to_s3(self.upload)
 
 if __name__ == "__main__":
     config = load_config()

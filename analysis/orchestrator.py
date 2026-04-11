@@ -26,7 +26,7 @@ class AnalysisOrchestrator:
             if shuffle_path.exists() else None
         )
 
-        with open(self.run_dir / "#metadata.json") as f:
+        with open(self.run_dir / "metadata.json") as f:
             self.feature_meta = json.load(f)
 
         self.feature_names = self.feature_meta["feature_names"]
