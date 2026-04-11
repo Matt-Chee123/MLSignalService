@@ -247,9 +247,6 @@ class TrainingOrchestrator:
         if hasattr(self, "shuffle_results"):
             pd.DataFrame(self.shuffle_results).to_parquet(self.metrics_dir / "shuffle_results.parquet")
 
-        with open(self.run_dir / "feature_names.json", "w") as f:
-            json.dump(self.feature_names, f)
-
         last = self.last_split
         train_df = last["X_train"].copy()
         train_df["label"] = last["y_train"]
@@ -261,6 +258,9 @@ class TrainingOrchestrator:
 
         with open(self.models_dir / "last_split_model.pkl", "wb") as f:
             pickle.dump(last["model"], f)
+
+        with open(self.models_dir / "features.json", "w") as f:
+            json.dump({"feature_metadata": self.config['features']}, f, indent=4)
 
         for i, (train, test) in enumerate(self.splits):
             train.to_parquet(self.run_dir / f"split_{i}_train.parquet")

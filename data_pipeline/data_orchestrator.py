@@ -78,7 +78,7 @@ class MarketDataPipeline:
 
         live_clean = clean_market_data(live_data)
 
-        feature_engineer = FeatureEngineer()
+        feature_engineer = FeatureEngineer(self.features)
         live_features = feature_engineer.build_features(live_clean)
 
         live_dir = self.split_data_path / "live"
