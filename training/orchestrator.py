@@ -259,8 +259,13 @@ class TrainingOrchestrator:
         with open(self.models_dir / "last_split_model.pkl", "wb") as f:
             pickle.dump(last["model"], f)
 
+        feature_metadata = {
+            'feature_names': self.feature_names,
+            'feature_metadata': self.config['features']
+        }
+
         with open(self.models_dir / "features.json", "w") as f:
-            json.dump({"feature_metadata": self.config['features']}, f, indent=4)
+            json.dump(feature_metadata, f, indent=4)
 
         for i, (train, test) in enumerate(self.splits):
             train.to_parquet(self.run_dir / f"split_{i}_train.parquet")

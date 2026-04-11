@@ -9,9 +9,10 @@ from config.loader import load_config
 
 
 class AnalysisOrchestrator:
-    def __init__(self, run_dir: str):
+    def __init__(self, config):
 
-        self.run_dir = Path(run_dir)
+        self.run_dir = Path(config['run_dir'])
+        self.models_dir = self.run_dir / "models"
         self.analysis_dir = self.run_dir / "analysis"
         self.analysis_dir.mkdir(exist_ok=True)
         metrics_dir = self.run_dir / "metrics"
@@ -25,8 +26,10 @@ class AnalysisOrchestrator:
             if shuffle_path.exists() else None
         )
 
-        with open(self.run_dir / "feature_names.json") as f:
-            self.feature_names = json.load(f)
+        with open(self.models_dir / "features.json") as f:
+            self.feature_meta = json.load(f)
+
+        self.feature_names = self.feature_meta["feature_names"]
 
         data = pd.read_parquet(self.run_dir / "last_split.parquet")
         train = data[data["_split"] == "train"].drop(columns=["_split"])
@@ -218,5 +221,5 @@ class AnalysisOrchestrator:
 if __name__ == "__main__":
     config = load_config()
     print(config)
-    orchestrator = AnalysisOrchestrator(config['run_dir'])
+    orchestrator = AnalysisOrchestrator(config)
     orchestrator.run_full_analysis()
