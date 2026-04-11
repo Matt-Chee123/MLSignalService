@@ -40,8 +40,9 @@ class TrainingOrchestrator:
         self.train_dir = self.run_dir / "train_data"
         self.predictions_dir = self.run_dir / "predictions"
         self.analysis_dir = self.run_dir / "analysis"
+        self.data_dir = self.run_dir / "data"
 
-        for d in [self.run_dir, self.models_dir, self.metrics_dir, self.logs_dir, self.predictions_dir]:
+        for d in [self.run_dir, self.models_dir, self.metrics_dir, self.logs_dir, self.predictions_dir, self.data_dir]:
             d.mkdir(parents=True, exist_ok=True)
 
         self.logger = self._init_logger()
@@ -254,27 +255,27 @@ class TrainingOrchestrator:
         test_df = last["X_test"].copy()
         test_df["label"] = last["y_test"]
         test_df["_split"] = "test"
-        pd.concat([train_df, test_df]).to_parquet(self.run_dir / "last_split.parquet")
+        pd.concat([train_df, test_df]).to_parquet(self.data_dir / "last_split.parquet")
 
         with open(self.models_dir / "last_split_model.pkl", "wb") as f:
             pickle.dump(last["model"], f)
 
-        feature_metadata = {
+        metadata = {
             'feature_names': self.feature_names,
-            'feature_metadata': self.config['features']
+            'feature_metadata': self.config['features'],
+            'passed_validation': str(validation)
         }
 
-        with open(self.models_dir / "features.json", "w") as f:
-            json.dump(feature_metadata, f, indent=4)
+        with open(self.run_dir / "metadata.json", "w") as f:
+            json.dump(metadata, f, indent=4)
 
         for i, (train, test) in enumerate(self.splits):
-            train.to_parquet(self.run_dir / f"split_{i}_train.parquet")
-            test.to_parquet(self.run_dir / f"split_{i}_test.parquet")
+            train.to_parquet(self.data_dir / f"split_{i}_train.parquet")
+            test.to_parquet(self.data_dir / f"split_{i}_test.parquet")
 
-        with open(self.run_dir / "splits_count.json", "w") as f:
+        with open(self.data_dir / "splits_count.json", "w") as f:
             json.dump({"n_splits": len(self.splits)}, f)
 
-        print(self.run_dir)
 
 if __name__ == "__main__":
     config = load_config()

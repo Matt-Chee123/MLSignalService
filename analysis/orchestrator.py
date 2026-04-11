@@ -12,8 +12,8 @@ class AnalysisOrchestrator:
     def __init__(self, config):
 
         self.run_dir = Path(config['run_dir'])
-        self.models_dir = self.run_dir / "models"
         self.analysis_dir = self.run_dir / "analysis"
+        self.data_dir = self.run_dir / "data"
         self.analysis_dir.mkdir(exist_ok=True)
         metrics_dir = self.run_dir / "metrics"
 
@@ -26,12 +26,12 @@ class AnalysisOrchestrator:
             if shuffle_path.exists() else None
         )
 
-        with open(self.models_dir / "features.json") as f:
+        with open(self.run_dir / "#metadata.json") as f:
             self.feature_meta = json.load(f)
 
         self.feature_names = self.feature_meta["feature_names"]
 
-        data = pd.read_parquet(self.run_dir / "last_split.parquet")
+        data = pd.read_parquet(self.data_dir / "last_split.parquet")
         train = data[data["_split"] == "train"].drop(columns=["_split"])
         test  = data[data["_split"] == "test"].drop(columns=["_split"])
 
@@ -48,13 +48,13 @@ class AnalysisOrchestrator:
 
         self.report_gen = ReportGenerator(metrics_dir)
 
-        with open(self.run_dir / "splits_count.json") as f:
+        with open(self.data_dir / "splits_count.json") as f:
             n = json.load(f)["n_splits"]
 
         self.splits = [
             (
-                pd.read_parquet(self.run_dir / f"split_{i}_train.parquet"),
-                pd.read_parquet(self.run_dir / f"split_{i}_test.parquet"),
+                pd.read_parquet(self.data_dir / f"split_{i}_train.parquet"),
+                pd.read_parquet(self.data_dir / f"split_{i}_test.parquet"),
             )
             for i in range(n)
         ]

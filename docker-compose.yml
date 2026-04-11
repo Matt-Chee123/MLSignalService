@@ -14,7 +14,7 @@ services:
       - ROLE=PRODUCER
     volumes:
       - ml-data:/data
-      - ml-training:/training
+      - ./training:/training
   training-pipeline:
     build:
       context: .
@@ -24,7 +24,7 @@ services:
       - ROLE=CONSUMER
     volumes:
       - ml-data:/data
-      - ml-training:/training
+      - ./training:/training
     depends_on:
       data-pipeline:
         condition: service_completed_successfully
@@ -37,7 +37,7 @@ services:
       - ROLE=CONSUMER
     volumes:
       - ml-data:/data
-      - ml-training:/training
+      - ./training:/training
     depends_on:
       training-pipeline:
         condition: service_completed_successfully
@@ -50,7 +50,7 @@ services:
       - ROLE=CONSUMER
     volumes:
       - ml-data:/data
-      - ml-training:/training
+      - ./training:/training
     depends_on:
       analysis-pipeline:
         condition: service_completed_successfully
