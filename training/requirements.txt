@@ -6,3 +6,4 @@ boto3==1.34.162
 python-dateutil
 six
 xgboost
+skops

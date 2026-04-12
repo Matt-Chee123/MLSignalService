@@ -294,7 +294,8 @@ class TrainingOrchestrator:
         metadata = {
             'feature_names': self.feature_names,
             'feature_metadata': self.config['features'],
-            'passed_validation': str(validation)
+            'passed_validation': str(validation),
+            'horizon': self.config['horizon']
         }
 
         with open(self.run_dir / "metadata.json", "w") as f:

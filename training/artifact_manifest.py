@@ -10,7 +10,7 @@ class ArtifactManifest:
         self.manifest = {
             "run_id": self.run_id,
             "artifacts": {
-                "model": {"path": "models/model.pkl", "upload": True},
+                "model": {"path": "models/model.skops", "upload": True},
                 "metadata": {"path": "metadata.json", "upload": True},
                 "config": {"path": "config.json", "upload": True},
                 "metrics": {"path": "metrics/", "upload": False},
