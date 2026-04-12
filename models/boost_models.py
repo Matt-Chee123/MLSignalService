@@ -20,5 +20,9 @@ class XgBoostModel(BaseModel):
             random_state=self.hyperparameters.get('random_state', 42),
             n_jobs=self.hyperparameters.get('n_jobs', -1),
 
-            objective=self.hyperparameters.get('objective', 'reg:squarederror')
+            objective=self.hyperparameters.get('objective', 'reg:squarederror'),
+
+            tree_method=self.hyperparameters.get('tree_method', 'gpu_hist'),
+            predictor=self.hyperparameters.get('predictor', 'gpu_predictor'),
+            device=self.hyperparameters.get('device', 'cuda')
         )
