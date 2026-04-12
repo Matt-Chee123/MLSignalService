@@ -1,1 +1,5 @@
 /training/artifacts/
+/data/
+/notebooks/
+/app/
+/.venv/

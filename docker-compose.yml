@@ -8,7 +8,7 @@ services:
   data-pipeline:
     build:
       context: .
-      dockerfile: /data_pipeline/Dockerfile
+      dockerfile: ./data_pipeline/Dockerfile
     container_name: data-pipeline
     environment:
       - ROLE=PRODUCER
@@ -18,7 +18,11 @@ services:
   training-pipeline:
     build:
       context: .
-      dockerfile: /training/Dockerfile
+      dockerfile: ./training/Dockerfile
+    gpus:
+      - driver: nvidia
+        count: all
+        capabilities: [ gpu ]
     container_name: training-pipeline
     env_file:
       - .env
@@ -36,7 +40,7 @@ services:
   analysis-pipeline:
     build:
       context: .
-      dockerfile: /analysis/Dockerfile
+      dockerfile: ./analysis/Dockerfile
     container_name: analysis-pipeline
     environment:
       - ROLE=CONSUMER
@@ -49,7 +53,7 @@ services:
   backtest-pipeline:
     build:
       context: .
-      dockerfile: /backtest/Dockerfile
+      dockerfile: ./backtest/Dockerfile
     container_name: backtest-pipeline
     environment:
       - ROLE=CONSUMER

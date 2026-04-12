@@ -22,7 +22,6 @@ class XgBoostModel(BaseModel):
 
             objective=self.hyperparameters.get('objective', 'reg:squarederror'),
 
-            tree_method=self.hyperparameters.get('tree_method', 'gpu_hist'),
-            predictor=self.hyperparameters.get('predictor', 'gpu_predictor'),
+            tree_method=self.hyperparameters.get('tree_method', 'hist'),
             device=self.hyperparameters.get('device', 'cuda')
         )

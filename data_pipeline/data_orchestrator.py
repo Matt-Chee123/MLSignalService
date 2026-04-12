@@ -52,7 +52,7 @@ class MarketDataPipeline:
         feature_engineer = FeatureEngineer(self.features)
         feature_df = feature_engineer.build_features(clean_data)
         self.logger.info("Adding labels...")
-        label_gen = LabelGenerator()
+        label_gen = LabelGenerator(self.horizon)
         labeled_df = label_gen.add_labels(feature_df)
         labeled_df = labeled_df.dropna(subset=['label'])
         return labeled_df

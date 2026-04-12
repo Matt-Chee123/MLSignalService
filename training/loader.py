@@ -9,8 +9,8 @@ def load_splits(data_path):
         train_file = data_dir / f"train_split_{idx}.parquet"
         test_file = data_dir / f"test_split_{idx}.parquet"
         if train_file.exists() and test_file.exists():
-            train = pd.read_parquet(train_file)
-            test = pd.read_parquet(test_file)
+            train = pd.read_parquet(train_file).astype("float32")
+            test = pd.read_parquet(test_file).astype("float32")
             splits.append((train,test))
     return splits
 

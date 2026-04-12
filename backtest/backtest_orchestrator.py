@@ -25,6 +25,7 @@ class BacktestOrchestrator:
 
         tes = backtester.run()
         tes.save(f"../training/artifacts/{self.experiment}/{self.run_id}")
+        tes.print_summary()
 
 if __name__ == "__main__":
     config = load_config()

@@ -1,5 +1,5 @@
 {
-    "experiment_name": "rf_signal_v3",
+    "experiment_name": "xg_signal_v1",
     "horizon": 3,
     "tickers": [
         "PG",
@@ -109,11 +109,19 @@
         "split_data_path": "/data/datasets/"
     },
     "model": {
-        "model_type": "random_forest",
-        "hyperparams": {
+          "model_type": "xgboost",
+          "hyperparams": {
             "n_estimators": 500,
-            "max_depth": "None"
-        }
+            "learning_rate": 0.05,
+            "max_depth": 6,
+            "subsample": 0.8,
+            "colsample_bytree": 0.8,
+            "min_child_weight": 1,
+            "gamma": 0,
+            "reg_alpha": 0,
+            "reg_lambda": 1,
+            "random_state": 42
+          }
     },
     "features": {
         "return_windows": [1, 5, 21, 63, 126],
