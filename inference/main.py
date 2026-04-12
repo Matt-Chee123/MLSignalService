@@ -25,17 +25,6 @@ async def predict(req: PredictRequest):
     data_processor = DataPreprocess(features)
     data = data_processor.prepare(tickers)
 
-    for col in ["fcf", "fcf_sector_z"]:
-        print("\n====================")
-        print(col)
-        print("====================")
-
-        print("dtype:", data[col].dtype)
-        print("sample values:")
-        print(data[col].dropna().head(10).to_list())
-
-        print("\nunique types inside column:")
-        print(data[col].apply(type).value_counts())
     predictions = model.predict(data)
     scored_list = sorted(
         zip(data.index.tolist(), predictions.tolist()),
