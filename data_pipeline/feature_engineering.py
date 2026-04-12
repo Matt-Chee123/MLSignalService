@@ -63,14 +63,14 @@ class FeatureEngineer:
     def add_sma(self, df):
         for window in self.sma_windows:
             df[f'sma_{window}'] = df.groupby('Ticker', group_keys=False)['Close'].transform(
-                lambda x: ta.sma(x, length=window)
+                lambda x: ta.sma(x, length=window) / x
             )
         return df
 
     def add_ema(self, df):
         for window in self.ema_windows:
             df[f'ema_{window}'] = df.groupby('Ticker', group_keys=False)['Close'].transform(
-                lambda x: ta.ema(x, length=window)
+                lambda x: ta.ema(x, length=window) / x
             )
         return df
 

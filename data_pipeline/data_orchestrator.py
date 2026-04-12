@@ -68,10 +68,10 @@ class MarketDataPipeline:
     def fetch_live_snapshot(self):
 
         self.logger.info("Fetching live market snapshot...")
-
+        live_start = (pd.Timestamp.today() - pd.DateOffset(years=1)).strftime("%Y-%m-%d")
         live_data = fetch_universe(
             tickers=self.tickers,
-            start=self.start,
+            start=live_start,
             end=pd.Timestamp.today().strftime("%Y-%m-%d"),
             interval=self.interval
         )
