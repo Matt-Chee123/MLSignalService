@@ -106,6 +106,8 @@ class FeatureEngineer:
             if metric not in df.columns:
                 continue
 
+            df[metric] = pd.to_numeric(df[metric], errors="coerce")
+
             group = df.groupby(['Date', 'sector'])[metric]
 
             m = group.transform('mean')
