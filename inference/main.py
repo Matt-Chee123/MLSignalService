@@ -16,6 +16,9 @@ features = loader.load_features()
 
 class PredictRequest(BaseModel):
     tickers: list[str]
+    model_version: str
+    top_n: int
+    strategy: str
 
 @app.post("/predict")
 async def predict(req: PredictRequest):
