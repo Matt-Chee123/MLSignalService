@@ -18,7 +18,6 @@ features = loader.load_features()
 
 class PredictRequest(BaseModel):
     tickers: list[str]
-    model_version: str
     top_n: int
     strategy: str
 
@@ -26,7 +25,6 @@ class PredictRequest(BaseModel):
 async def predict(req: PredictRequest):
     tickers = req.tickers
     strategy = req.strategy
-    model_version = req.model_version
     top_n = req.top_n
     pred_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     num_tickers = len(tickers)
@@ -43,7 +41,6 @@ async def predict(req: PredictRequest):
     data = {
         "ranked_tickers": constructed_rankings,
         "strategy": strategy,
-        "model_version": model_version,
         "prediction_timestamp": pred_time,
         "top_n": top_n,
         "tickers_returned": num_tickers
