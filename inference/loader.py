@@ -11,13 +11,14 @@ class S3Loader:
         self.directory = experiment['directory']
 
     def load_model(self):
-        key = f"{self.directory}models/model.skops"
-        print(f"Downloading model from s3://{self.bucket}/{key}")
-
-        response = self.s3.get_object(Bucket=self.bucket, Key=key)
-        model_file = BytesIO(response['Body'].read())
-        untrusted_types = sio.get_untrusted_types(file=model_file)
-        model = sio.load(model_file, trusted=untrusted_types)
+        # key = f"{self.directory}models/model.skops"
+        # print(f"Downloading model from s3://{self.bucket}/{key}")
+        #
+        # response = self.s3.get_object(Bucket=self.bucket, Key=key)
+        # model_file = BytesIO(response['Body'].read())
+        untrusted_types = sio.get_untrusted_types(file='../training/artifacts/xg_signal_v1/20260412_171314/models/model.skops')
+        # model = sio.load(model_file, trusted=untrusted_types)
+        model = sio.load('../training/artifacts/xg_signal_v1/20260412_171314/models/model.skops', trusted=untrusted_types)
         return model
 
     def load_features(self):
