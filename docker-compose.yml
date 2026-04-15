@@ -1,10 +1,25 @@
-version: "3.9"
-
 volumes:
   ml-data:
   ml-training:
 
 services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    ports:
+      - "5000:5000"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root s3://${ARTIFACT_BUCKET}/
+      --host 0.0.0.0
+      --port 5000
+      --cors-allowed-origins "*"
+      --allowed-hosts "*"
+
   data-pipeline:
     build:
       context: .
@@ -31,6 +46,7 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     volumes:
       - ml-data:/data
       - ./training:/training

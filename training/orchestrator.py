@@ -17,7 +17,7 @@ class TrainingOrchestrator:
         self.config = config
         self.model_config = config['model']
         self.training_config = config['training']
-        self.tracker = ExperimentTracker(run_id=config['run_id'])
+        self.tracker = ExperimentTracker(config)
 
         self.s3 = boto3.client('s3')
         self.upload = config['s3']['upload']
@@ -28,8 +28,6 @@ class TrainingOrchestrator:
                 for name in config.get("metrics", [])
             }
         )
-
-        self.experiment_id = self.tracker.start_experiment(self.config)
 
         self.run_id = config['run_id']
         self.experiment_name = config.get("experiment_name", "default_experiment")
@@ -126,6 +124,9 @@ class TrainingOrchestrator:
             })
             self.logger.info(f"Split {idx} | {metrics}")
         self.shuffle_metrics = self.evaluator.evaluate_all_splits(self.shuffle_results)
+        self.tracker.log_metrics(
+            {f"shuffle_{k}": v for k, v in self.shuffle_metrics.items()}
+        )
         self.logger.info(f"Summary metrics: {self.shuffle_metrics}")
         pd.DataFrame(self.shuffle_results).to_csv(self.metrics_dir / "shuffle_metrics.csv", index=False)
 
@@ -158,13 +159,6 @@ class TrainingOrchestrator:
                 future_returns=y_test
             )
 
-            self.tracker.log_split_metrics(
-                idx,
-                metrics.get("mse"),
-                metrics.get("r2"),
-                metrics.get("rank_ic"),
-            )
-
             self.split_results.append({
                 "split": idx,
                 **metrics
@@ -178,6 +172,7 @@ class TrainingOrchestrator:
 
             self.logger.info(f"Split {idx} | {metrics}")
         self.split_metrics = self.evaluator.evaluate_all_splits(self.split_results)
+        self.tracker.log_metrics(self.split_metrics)
         self.logger.info(f"Summary metrics: {self.split_metrics}")
         pd.DataFrame(self.split_results).to_csv(self.metrics_dir / "split_metrics.csv", index=False)
 
@@ -201,6 +196,7 @@ class TrainingOrchestrator:
         self.logger.info("Training on full dataset")
         model.fit(X_full, y_full)
         model.save_model()
+        self.tracker.log_model(model.model.model)
 
     def generate_live_signal(self):
         self.logger.info("Generating live signal...")
@@ -247,6 +243,9 @@ class TrainingOrchestrator:
 
 
     def run_pipeline(self,data_dir, live_data=None):
+
+        self.tracker.start()
+        self.tracker.log_params(self.model_config['hyperparams'])
         self.load_data(data_dir)
 
         self.run_cross_validation()
@@ -257,7 +256,6 @@ class TrainingOrchestrator:
             "shuffle_summary": self.shuffle_metrics,
             "passed_validation": json.loads(json.dumps(validation, default=float)),
         }
-        self.tracker.log_summary(summary_payload)
         if validation:
             self.train_full_model()
             if self.live_data is not None:
@@ -267,13 +265,6 @@ class TrainingOrchestrator:
         predictions_path = str(self.predictions_dir)
         metrics_path = str(self.metrics_dir)
 
-        self.tracker.log_artifacts(
-            model_path=str(self.models_dir),
-            predictions_path=str(self.predictions_dir),
-            plots_path=str(self.metrics_dir),
-            analysis_path=str(self.analysis_dir)
-        )
-        self.tracker.close()
         pd.DataFrame(self.split_results).to_parquet(self.metrics_dir / "split_results.parquet")
 
         if hasattr(self, "shuffle_results"):
@@ -311,6 +302,8 @@ class TrainingOrchestrator:
         self.manifest.build_manifest()
         self.manifest.save_manifest()
         self.push_to_s3(self.upload)
+
+        self.tracker.end()
 
 if __name__ == "__main__":
     config = load_config()
