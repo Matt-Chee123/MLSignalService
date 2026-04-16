@@ -8,6 +8,7 @@ from pathlib import Path
 from config.loader import load_config
 import mlflow
 import os
+import boto3
 
 
 class AnalysisOrchestrator:
