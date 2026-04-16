@@ -53,29 +53,44 @@ class BacktestOrchestrator:
             mlflow.log_param("backtest_strategy", self.portfolio_strategy)
             mlflow.log_param("backtest_benchmark", self.benchmark)
 
-            tes = backtester.run()
-
+            results = backtester.run()
             save_path = f"../training/artifacts/{self.experiment}/{self.run_id}"
-            tes.save(save_path)
-            tes.print_summary()
+            results.save(save_path)
+            results.print_summary()
 
-            metrics = {
-                "backtest_sharpe": tes.sharpe,
-                "backtest_total_return": tes.total_return,
-                "backtest_max_drawdown": tes.max_drawdown,
-                "backtest_volatility": tes.volatility,
-                "backtest_calmar": tes.calmar,
-                "backtest_win_rate": tes.win_rate,
+            m = results.metrics
+            cumulative_total_return = results.cumulative_returns.iloc[-1] - 1
+
+            metrics_to_log = {
+                "backtest_sharpe": m["Sharpe Ratio"],
+                "backtest_annual_return": m["Annual Return"],
+                "backtest_total_return": cumulative_total_return,
+                "backtest_max_drawdown": m["Max Drawdown"],
+                "backtest_volatility": m["Annual Volatility"],
+                "backtest_tracking_error": m["Tracking Error"],
+                "backtest_information_ratio": m["Information Ratio"],
+                "backtest_beta": m["Beta"],
+                "backtest_alpha": m["Alpha"],
+                "backtest_avg_turnover": m["Average Turnover"],
+                "backtest_avg_gross_exposure": m["Average Gross Exposure"],
             }
-            mlflow.log_metrics({k: v for k, v in metrics.items() if v is not None})
 
-            if hasattr(tes, "alpha"):
-                mlflow.log_metric("backtest_alpha", tes.alpha)
-                mlflow.log_metric("backtest_beats_benchmark", int(tes.sharpe > tes.benchmark_sharpe))
+            if m["Max Drawdown"] != 0:
+                metrics_to_log["backtest_calmar"] = (
+                        m["Annual Return"] / abs(m["Max Drawdown"])
+                )
+
+            period_returns = results.period_returns
+            if len(period_returns) > 0:
+                metrics_to_log["backtest_win_rate"] = (period_returns > 0).mean()
+
+            mlflow.log_metrics(
+                {k: v for k, v in metrics_to_log.items() if v is not None}
+            )
 
             mlflow.log_artifacts(save_path, artifact_path="backtest")
 
-            mlflow.set_tag("backtest_profitable", str(tes.total_return > 0))
+            mlflow.set_tag("backtest_profitable", str(cumulative_total_return > 0))
             mlflow.set_tag("backtest_strategy", self.portfolio_strategy)
 
 if __name__ == "__main__":
