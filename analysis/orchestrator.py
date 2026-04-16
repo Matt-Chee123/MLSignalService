@@ -6,6 +6,8 @@ from analysis.diagnostics import ModelDiagnostics, RegimeAnalyser
 from analysis.visualisations import ReportGenerator
 from pathlib import Path
 from config.loader import load_config
+import mlflow
+import os
 
 
 class AnalysisOrchestrator:
@@ -59,6 +61,25 @@ class AnalysisOrchestrator:
             for i in range(n)
         ]
 
+        self.tracking_uri = os.environ.get('MLFLOW_TRACKING_URI', 'http://localhost:5000')
+        self.run_name = config['run_id']
+        self.experiment_name = config.get('experiment_name', 'default_experiment')
+
+        mlflow.set_tracking_uri(self.tracking_uri)
+        experiment = mlflow.set_experiment(self.experiment_name)
+
+        existing = mlflow.search_runs(
+            experiment_ids=[experiment.experiment_id],
+            filter_string=f"tags.mlflow.runName = '{self.run_name}'",
+            max_results=1,
+        )
+        if len(existing) == 0:
+            raise RuntimeError(
+                f"No MLflow run named '{self.run_name}' found — "
+                f"did training complete?"
+            )
+        self.mlflow_run_id = existing.iloc[0]["run_id"]
+
     def run_statistical_validation(self):
         print("\n" + "="*70)
         print("RUNNING STATISTICAL VALIDATION")
@@ -72,6 +93,14 @@ class AnalysisOrchestrator:
 
         export_path = self.analysis_dir / "validation_results.json"
         validator.export_results(export_path)
+        mlflow.log_artifact(str(export_path), artifact_path="analysis")
+
+        all_results = validator.validate_all_metrics()
+        for metric_name, result in all_results.items():
+            d = result.to_dict()
+            for key, val in d.items():
+                if isinstance(val, (int, float)) and not isinstance(val, bool):
+                    mlflow.log_metric(f"val_{metric_name}_{key}", val)
 
         return validator
 
@@ -91,6 +120,13 @@ class AnalysisOrchestrator:
 
         import json
         export_path = self.analysis_dir / "diagnostics_summary.json"
+        with open(export_path, 'w') as f:
+            json.dump(summary, f, indent=2)
+
+        mlflow.log_artifact(str(export_path), artifact_path="analysis")
+        for key, val in summary.items():
+            if isinstance(val, (int, float)):
+                mlflow.log_metric(f"diag_{key}", val)
 
         def convert_types(obj):
             import numpy as np
@@ -126,6 +162,7 @@ class AnalysisOrchestrator:
         regime_df = regime_analyzer.extract_regime_features()
         export_path = self.analysis_dir / "regime_analysis.parquet"
         regime_df.to_parquet(export_path)
+        mlflow.log_artifact(str(export_path), artifact_path="analysis")
 
         return regime_analyzer
 
@@ -164,6 +201,20 @@ class AnalysisOrchestrator:
         with open(self.analysis_dir / "feature_analysis.json", 'w') as f:
             json.dump(export, f, indent=2, default=float)
 
+        mlflow.log_artifact(
+            str(self.analysis_dir / "feature_importance.parquet"),
+            artifact_path="analysis",
+        )
+        mlflow.log_artifact(
+            str(self.analysis_dir / "feature_analysis.json"),
+            artifact_path="analysis",
+        )
+
+        mlflow.log_metric("features_for_80pct_importance", len(export["feature_reduction"]["80pct"]))
+        mlflow.log_metric("features_for_90pct_importance", len(export["feature_reduction"]["90pct"]))
+        mlflow.log_metric("features_for_95pct_importance", len(export["feature_reduction"]["95pct"]))
+        mlflow.log_metric("n_redundant_feature_pairs", len(export["redundant_pairs"]))
+
         return analyser
 
     def generate_visualizations(self):
@@ -186,6 +237,7 @@ class AnalysisOrchestrator:
             print(f"Generated {len(saved_plots)} plots:")
             for plot_path in saved_plots:
                 print(f"  - {plot_path.name}")
+                mlflow.log_artifact(str(plot_path), artifact_path="plots")
 
     def run_full_analysis(self):
 
@@ -194,27 +246,30 @@ class AnalysisOrchestrator:
         print("="*68)
 
         results = {}
+        with mlflow.start_run(run_id=self.mlflow_run_id):
+            mlflow.set_tag("analysis_completed", "false")  # flipped at end
 
-        try:
-            results['validator'] = self.run_statistical_validation()
-        except Exception as e:
-            print(f"⚠️  Error in statistical validation: {e}")
+            try:
+                results['validator'] = self.run_statistical_validation()
+            except Exception as e:
+                print(f"⚠️  Error in statistical validation: {e}")
 
-        try:
-            results['diagnostics'] = self.run_diagnostics()
-        except Exception as e:
-            print(f"⚠️  Error in diagnostics: {e}")
+            try:
+                results['diagnostics'] = self.run_diagnostics()
+            except Exception as e:
+                print(f"⚠️  Error in diagnostics: {e}")
 
-        try:
-            results['regime_analyzer'] = self.run_regime_analysis()
-        except Exception as e:
-            print(f"⚠️  Error in regime analysis: {e}")
-        results['feature_analyser'] = self.run_feature_analysis()
+            try:
+                results['regime_analyzer'] = self.run_regime_analysis()
+            except Exception as e:
+                print(f"⚠️  Error in regime analysis: {e}")
+            results['feature_analyser'] = self.run_feature_analysis()
 
-        try:
-            self.generate_visualizations()
-        except Exception as e:
-            print(f"⚠️  Error generating visualizations: {e}")
+            try:
+                self.generate_visualizations()
+            except Exception as e:
+                print(f"⚠️  Error generating visualizations: {e}")
+            mlflow.set_tag("analysis_completed", "true")
 
         return results
 

@@ -6,3 +6,6 @@ matplotlib==3.10.8
 matplotlib-inline==0.2.1
 seaborn==0.13.2
 xgboost
+mlflow==3.11.1
+mlflow-skinny==3.11.1
+mlflow-tracing==3.11.1
