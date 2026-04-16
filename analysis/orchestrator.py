@@ -185,6 +185,12 @@ class AnalysisOrchestrator:
         analyser.print_importance_report(top_n=20)
 
         importance_df = analyser.get_tree_importance()
+
+        mlflow.log_param("n_features", len(self.feature_names))
+        mlflow.log_dict({"features": self.feature_names}, "features.json")
+        for _, row in importance_df.iterrows():
+            mlflow.log_metric(f"importance_{row['feature']}", row['importance'])
+
         importance_df.to_parquet(self.analysis_dir / "feature_importance.parquet")
 
         export = {

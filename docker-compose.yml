@@ -79,9 +79,15 @@ services:
     container_name: backtest-pipeline
     environment:
       - ROLE=CONSUMER
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     volumes:
       - ml-data:/data
       - ./training:/training
     depends_on:
       analysis-pipeline:
         condition: service_completed_successfully
+      mlflow:
+        condition: service_started
