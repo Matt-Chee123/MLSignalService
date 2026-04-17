@@ -301,7 +301,7 @@ class TrainingOrchestrator:
 
         self.manifest.build_manifest()
         self.manifest.save_manifest()
-        self.push_to_s3(self.upload)
+        # self.push_to_s3(self.upload)
 
         self.tracker.end()
 

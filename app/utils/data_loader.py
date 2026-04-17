@@ -1,10 +1,10 @@
 import json
 
 import pandas as pd
-
-from config import ARTIFACTS_DIR
+from pathlib import Path
 import streamlit as st
 
+ARTIFACTS_DIR = Path('../training/artifacts')
 
 def list_experiment():
     directories = []

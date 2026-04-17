@@ -94,7 +94,6 @@ class AnalysisOrchestrator:
 
         export_path = self.analysis_dir / "validation_results.json"
         validator.export_results(export_path)
-        mlflow.log_artifact(str(export_path), artifact_path="analysis")
 
         all_results = validator.validate_all_metrics()
         for metric_name, result in all_results.items():
@@ -124,7 +123,6 @@ class AnalysisOrchestrator:
         with open(export_path, 'w') as f:
             json.dump(summary, f, indent=2)
 
-        mlflow.log_artifact(str(export_path), artifact_path="analysis")
         for key, val in summary.items():
             if isinstance(val, (int, float)):
                 mlflow.log_metric(f"diag_{key}", val)
@@ -163,7 +161,6 @@ class AnalysisOrchestrator:
         regime_df = regime_analyzer.extract_regime_features()
         export_path = self.analysis_dir / "regime_analysis.parquet"
         regime_df.to_parquet(export_path)
-        mlflow.log_artifact(str(export_path), artifact_path="analysis")
 
         return regime_analyzer
 
@@ -208,14 +205,6 @@ class AnalysisOrchestrator:
         with open(self.analysis_dir / "feature_analysis.json", 'w') as f:
             json.dump(export, f, indent=2, default=float)
 
-        mlflow.log_artifact(
-            str(self.analysis_dir / "feature_importance.parquet"),
-            artifact_path="analysis",
-        )
-        mlflow.log_artifact(
-            str(self.analysis_dir / "feature_analysis.json"),
-            artifact_path="analysis",
-        )
 
         mlflow.log_metric("features_for_80pct_importance", len(export["feature_reduction"]["80pct"]))
         mlflow.log_metric("features_for_90pct_importance", len(export["feature_reduction"]["90pct"]))

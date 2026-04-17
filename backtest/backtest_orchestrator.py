@@ -88,7 +88,7 @@ class BacktestOrchestrator:
                 {k: v for k, v in metrics_to_log.items() if v is not None}
             )
 
-            mlflow.log_artifacts(save_path, artifact_path="backtest")
+            mlflow.log_artifacts(save_path, artifact_path="analysis")
 
             mlflow.set_tag("backtest_profitable", str(cumulative_total_return > 0))
             mlflow.set_tag("backtest_strategy", self.portfolio_strategy)
