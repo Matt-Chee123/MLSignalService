@@ -6,6 +6,7 @@ services:
   api:
     image: 742600926264.dkr.ecr.eu-west-2.amazonaws.com/ml-signal-service/pipeline:api
     env_file: .env
+    profiles: [ "serve" ]
     ports:
       - "8000:8000"
   data-pipeline:
@@ -15,6 +16,7 @@ services:
     container_name: data-pipeline
     environment:
       - ROLE=PRODUCER
+    profiles: [ "train" ]
     volumes:
       - ml-data:/data
       - ./training:/training
@@ -29,6 +31,7 @@ services:
     container_name: training-pipeline
     env_file:
       - .env
+    profiles: [ "train" ]
     environment:
       - ROLE=CONSUMER
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -52,6 +55,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+    profiles: [ "train" ]
     volumes:
       - ml-data:/data
       - ./training:/training
@@ -69,6 +73,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+    profiles: [ "train" ]
     volumes:
       - ml-data:/data
       - ./training:/training
