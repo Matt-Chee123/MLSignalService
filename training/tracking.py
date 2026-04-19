@@ -4,7 +4,7 @@ import mlflow
 import mlflow.sklearn
 import tempfile
 import json
-
+from mlflow.models.signature import infer_signature
 
 class ExperimentTracker:
     def __init__(self, config):
@@ -27,8 +27,9 @@ class ExperimentTracker:
         clean = {k: float(v) for k, v in metrics.items()}
         mlflow.log_metrics(clean, step=step)
 
-    def log_model(self, model, artifact_path="model"):
-        mlflow.sklearn.log_model(model, artifact_path=artifact_path)
+    def log_model(self, model, X_full, preds, artifact_path="model"):
+        signature = infer_signature(X_full, preds)
+        mlflow.sklearn.log_model(model,  artifact_path=artifact_path, signature=signature, input_example=X_full.iloc[:5])
 
         run_id = mlflow.active_run().info.run_id
         self.model_uri = f"runs:/{run_id}/{artifact_path}"

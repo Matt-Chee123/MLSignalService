@@ -196,7 +196,8 @@ class TrainingOrchestrator:
         self.logger.info("Training on full dataset")
         model.fit(X_full, y_full)
         model.save_model()
-        self.tracker.log_model(model.model.model)
+        preds = model.predict(X_full)
+        self.tracker.log_model(model.model.model, X_full, preds)
 
     def generate_live_signal(self):
         self.logger.info("Generating live signal...")

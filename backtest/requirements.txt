@@ -1,9 +1,9 @@
-numpy==2.2.6
+numpy==1.26.4
 pandas==2.3.3
 matplotlib==3.10.8
 matplotlib-inline==0.2.1
 yfinance==1.0
-xgboost
+xgboost==3.2.0
 mlflow==3.11.1
 mlflow-skinny==3.11.1
 mlflow-tracing==3.11.1

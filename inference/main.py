@@ -4,17 +4,41 @@ from inference.loader import S3Loader
 from inference.data_preprocess import DataPreprocess
 from inference.strategy import StrategyHandler
 from datetime import datetime, timezone
+from mlflow.tracking import MlflowClient
+from mlflow.artifacts import download_artifacts
+import os
+from contextlib import asynccontextmanager
+import mlflow
+import tempfile
+import yaml
 
-app = FastAPI()
+MODEL_NAME = os.environ["MODEL_NAME"]
+ALIAS = os.environ.get("MODEL_ALIAS", "production")
 
-experiment = {
-    'bucket': 'ml-signal-service',
-    'directory': 'xg_signal_v1/20260412_171314/'
-}
+state = {}
 
-loader = S3Loader(experiment)
-model = loader.load_model()
-features = loader.load_features()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+    client = MlflowClient()
+
+    mv = client.get_model_version_by_alias(MODEL_NAME, ALIAS)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg_path = download_artifacts(run_id=mv.run_id, artifact_path="config.yaml", dst_path=tmp)
+        with open(cfg_path) as f:
+            config = yaml.safe_load(f)
+
+    state["model"] = mlflow.pyfunc.load_model(f"models:/{MODEL_NAME}@{ALIAS}")
+    state["features"] = config["features"]
+    state["config"] = config
+    state["version"] = mv.version
+    state["run_id"] = mv.run_id
+    print(f"Loaded {MODEL_NAME}@{ALIAS} v{mv.version}, features={state['features']}")
+    yield
+    state.clear()
+
+app = FastAPI(lifespan=lifespan)
 
 class PredictRequest(BaseModel):
     tickers: list[str]

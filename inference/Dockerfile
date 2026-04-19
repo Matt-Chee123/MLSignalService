@@ -2,6 +2,11 @@ FROM python:3.12
 
 WORKDIR /app
 
+ENV MLFLOW_TRACKING_URI=http://18.135.98.128:5000/ \
+    MODEL_NAME=3m-model \
+    MODEL_ALIAS=production
+
+
 COPY inference/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 

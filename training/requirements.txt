@@ -8,5 +8,5 @@ mlflow-skinny==3.11.1
 mlflow-tracing==3.11.1
 python-dateutil
 six
-xgboost
+xgboost==3.2.0
 skops
