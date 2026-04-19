@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from inference.loader import S3Loader
 from inference.data_preprocess import DataPreprocess
 from inference.strategy import StrategyHandler
 from datetime import datetime, timezone
@@ -11,6 +10,7 @@ from contextlib import asynccontextmanager
 import mlflow
 import tempfile
 import yaml
+import numpy as np
 
 MODEL_NAME = os.environ["MODEL_NAME"]
 ALIAS = os.environ.get("MODEL_ALIAS", "production")
@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     mv = client.get_model_version_by_alias(MODEL_NAME, ALIAS)
 
     with tempfile.TemporaryDirectory() as tmp:
-        cfg_path = download_artifacts(run_id=mv.run_id, artifact_path="config.yaml", dst_path=tmp)
+        cfg_path = download_artifacts(run_id=mv.run_id, artifact_path="analysis/config.json", dst_path=tmp)
         with open(cfg_path) as f:
             config = yaml.safe_load(f)
 
@@ -53,10 +53,11 @@ async def predict(req: PredictRequest):
     pred_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     num_tickers = len(tickers)
 
-    data_processor = DataPreprocess(features)
+    data_processor = DataPreprocess(state['features'])
     data = data_processor.prepare(tickers)
-
-    predictions = model.predict(data)
+    float_cols = data.select_dtypes(include=["number"]).columns
+    data[float_cols] = data[float_cols].astype(np.float32)
+    predictions = state['model'].predict(data)
 
     strategy_processor = StrategyHandler(strategy, top_n)
     constructed_rankings = strategy_processor.construct(tickers, predictions)
