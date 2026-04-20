@@ -53,6 +53,7 @@ services:
       - ./training:/training
     depends_on:
       data-pipeline:
+        condition: service_completed_successfully
   analysis-pipeline:
     build:
       context: .

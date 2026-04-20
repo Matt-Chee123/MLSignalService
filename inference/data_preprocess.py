@@ -22,5 +22,6 @@ class DataPreprocess:
         latest_date = features.index.get_level_values('Date').max()
 
         latest_data = features.loc[latest_date]
-        return latest_data
+        successful_tickers = latest_data.index.tolist()
 
+        return latest_data, successful_tickers
