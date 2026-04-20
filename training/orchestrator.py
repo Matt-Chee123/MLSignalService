@@ -197,6 +197,10 @@ class TrainingOrchestrator:
         model.fit(X_full, y_full)
         model.save_model()
         preds = model.predict(X_full)
+        reference = X_full.copy()
+        reference["label"] = y_full.values
+        reference["prediction"] = preds
+        reference.to_parquet(self.data_dir / "reference.parquet", index=False)
         self.tracker.log_model(model.model.model, X_full, preds)
 
     def generate_live_signal(self):

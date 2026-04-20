@@ -4,11 +4,21 @@ volumes:
 
 services:
   api:
-    image: 742600926264.dkr.ecr.eu-west-2.amazonaws.com/ml-signal-service/pipeline:api
+    build:
+      context: .
+      dockerfile: ./inference/Dockerfile
     env_file: .env
     profiles: [ "serve" ]
     ports:
       - "8000:8000"
+  monitoring:
+    build:
+      context: .
+      dockerfile: ./monitoring/Dockerfile
+    env_file: .env
+    profiles: ["monitor"]
+    ports:
+      - "5000:5000"
   data-pipeline:
     build:
       context: .
