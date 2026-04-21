@@ -5,5 +5,7 @@ import monitoring.config
 if __name__ == "__main__":
     print("Here")
     dataCollector = DataCollector(BUCKET, AWS_REGION, MONITORED_MODELS[0])
-    dataCollector.load_config()
-    dataCollector.load_reference()
+    # dataCollector.load_config()
+    # dataCollector.load_reference()
+    predictions = dataCollector.load_predictions()
+    print(predictions)
