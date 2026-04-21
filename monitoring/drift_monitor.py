@@ -5,6 +5,16 @@ from evidently.metrics import ValueDrift
 
 class DriftMonitor:
     def __init__(self, config, reference, current, metadata):
+        self.training_tickers = config['tickers']
+
+        if self.training_tickers:
+            in_dist_mask = current["ticker"].isin(self.training_tickers)
+            self.current_in_dist = current[in_dist_mask]
+            self.current_oos = current[~in_dist_mask]
+        else:
+            self.current_in_dist = current
+            self.current_oos = current.iloc[0:0]
+
         self.config = config
         self.metadata = metadata
         self.reference = reference
@@ -15,7 +25,7 @@ class DriftMonitor:
         self.feature_definition = self._build_definition(self.feature_names)
         self.prediction_definition = self._build_definition([self.prediction_col])
         self.reference_ds = self._build_dataset(self.reference)
-        self.current_ds = self._build_dataset(self.current)
+        self.current_ds = self._build_dataset(self.current_in_dist)
 
     def _build_definition(self, numerical_columns=None, categorical_columns=None):
         return DataDefinition(numerical_columns=numerical_columns, categorical_columns=categorical_columns)
@@ -42,3 +52,32 @@ class DriftMonitor:
                 'drifted': score > psi_threshold,
             }
         return parsed
+
+    def detect_prediction_drift(self):
+        metric = [ValueDrift(column=self.prediction_col, method='psi')]
+        report = Report(metrics=metric)
+        snapshot = report.run(current_data=self.current_ds, reference_data=self.reference_ds)
+
+        result = snapshot.dict()
+
+        psi_threshold = self.config.get('feature_psi_threshold', 0.25)
+        parsed = {}
+        for metric in result['metrics']:
+            feature = metric['config']['column']
+            score = metric['value']
+            parsed[feature] = {
+                'method': 'psi',
+                'drift_score': score,
+                'drifted': score > psi_threshold,
+            }
+        return parsed
+
+    def detect_coverage_drift(self):
+        total = len(self.current)
+        oos = len(self.current_oos)
+        return {
+            "total_predictions": total,
+            "in_distribution": total - oos,
+            "out_of_distribution": oos,
+            "oos_rate": oos / total if total else 0.0,
+        }

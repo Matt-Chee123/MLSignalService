@@ -12,5 +12,9 @@ if __name__ == "__main__":
     predictions = dataCollector.load_predictions()
 
     driftMonitor = DriftMonitor(config, reference, predictions, metadata)
-    driftMonitor.detect_feature_drift()
-    print(predictions.columns)
+    feat_drift = driftMonitor.detect_feature_drift()
+    pred_drift = driftMonitor.detect_prediction_drift()
+    coverage_drift = driftMonitor.detect_coverage_drift()
+    print(coverage_drift)
+    print(feat_drift)
+    print(pred_drift)
