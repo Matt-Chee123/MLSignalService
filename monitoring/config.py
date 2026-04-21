@@ -27,3 +27,6 @@ def get_model_config(model_name):
 
 def get_model_reference(model_name):
     return f"{_artifact_uri(model_name)}/analysis/data/reference.parquet"
+
+def get_metadata_url(model_name):
+    return f"{_artifact_uri(model_name)}/analysis/metadata.json"

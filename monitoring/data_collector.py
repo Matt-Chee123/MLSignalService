@@ -1,5 +1,5 @@
 import boto3
-from monitoring.config import get_model_config, get_model_reference
+from monitoring.config import get_model_config, get_model_reference, get_metadata_url
 import mlflow.artifacts
 import pandas as pd
 from datetime import date, timedelta
@@ -18,10 +18,16 @@ class DataCollector:
         config = mlflow.artifacts.load_dict(config_url)
         return config
 
+    def load_metadata(self):
+        metadata_url = get_metadata_url(self.model_name)
+        metadata = mlflow.artifacts.load_dict(metadata_url)
+        return metadata
+
     def load_reference(self):
         reference_url = get_model_reference(self.model_name)
         reference_parq = mlflow.artifacts.download_artifacts(artifact_uri=reference_url)
         reference = pd.read_parquet(reference_parq)
+        return reference
 
     def load_predictions(self):
         end_date = date.today()
