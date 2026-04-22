@@ -1,6 +1,4 @@
 from evidently import Dataset, DataDefinition, Report, Regression
-from evidently.core.report import Snapshot
-from evidently.presets import DataDriftPreset
 from evidently.metrics import ValueDrift
 
 class DriftMonitor:
@@ -16,6 +14,8 @@ class DriftMonitor:
             self.current_oos = current.iloc[0:0]
 
         self.config = config
+        self.psi_threshold = self.config.get('feature_psi_threshold', 0.25)
+        self.oos_threshold = self.config.get('oos_rate_threshold', 0.05)
         self.metadata = metadata
         self.reference = reference
         self.current = current
@@ -40,8 +40,6 @@ class DriftMonitor:
 
         result = snapshot.dict()
 
-        psi_threshold = self.config.get('feature_psi_threshold', 0.25)
-
         parsed = {}
         for metric in result['metrics']:
             feature = metric['config']['column']
@@ -49,7 +47,7 @@ class DriftMonitor:
             parsed[feature] = {
                 'method': 'psi',
                 'drift_score': score,
-                'drifted': score > psi_threshold,
+                'drifted': score > self.psi_threshold,
             }
         return parsed
 
@@ -60,7 +58,6 @@ class DriftMonitor:
 
         result = snapshot.dict()
 
-        psi_threshold = self.config.get('feature_psi_threshold', 0.25)
         parsed = {}
         for metric in result['metrics']:
             feature = metric['config']['column']
@@ -68,7 +65,7 @@ class DriftMonitor:
             parsed[feature] = {
                 'method': 'psi',
                 'drift_score': score,
-                'drifted': score > psi_threshold,
+                'drifted': score > self.psi_threshold,
             }
         return parsed
 
@@ -81,3 +78,47 @@ class DriftMonitor:
             "out_of_distribution": oos,
             "oos_rate": oos / total if total else 0.0,
         }
+
+    def evaluate_drift_alerts(self, feature_drift, prediction_drift, coverage_drift):
+        alerts = []
+
+        for feature, metrics in feature_drift.items():
+            if metrics['drift_score'] >= self.psi_threshold:
+                alerts.append({
+                    'severity': 'high',
+                    'type': 'feature_drift',
+                    'feature': 'feature',
+                    'metric': 'psi',
+                    'value': metrics['drift_score'],
+                    'threshold': self.psi_threshold
+                })
+
+        for column, metrics in prediction_drift.items():
+            if metrics['drift_score'] >= self.psi_threshold:
+                alerts.append({
+                    'severity': 'high',
+                    'type': 'prediction_drift',
+                    'column': column,
+                    'metric': 'psi',
+                    'value': metrics['drift_score'],
+                    'threshold': self.psi_threshold,
+                })
+
+        if coverage_drift['oos_rate'] >= self.oos_threshold:
+            alerts.append({
+                'severity': 'high',
+                'type': 'coverage',
+                'metric': 'oos_rate',
+                'value': coverage_drift['oos_rate'],
+                'threshold': self.oos_threshold,
+            })
+
+        severities = {a['severity'] for a in alerts}
+        if 'high' in severities:
+            status = 'red'
+        elif 'medium' in severities:
+            status = 'yellow'
+        else:
+            status = 'green'
+
+        return alerts, status

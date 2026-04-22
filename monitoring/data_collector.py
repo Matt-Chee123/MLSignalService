@@ -4,8 +4,10 @@ import mlflow.artifacts
 import pandas as pd
 from datetime import date, timedelta
 from io import BytesIO
+import uuid
+import json
 
-class DataCollector:
+class DataHandler:
     def __init__(self, bucket_name, region, model_name, n_lookback=30):
         self.region = region
         self.bucket_name = bucket_name
@@ -62,3 +64,29 @@ class DataCollector:
         if not dfs:
             return pd.DataFrame()
         return pd.concat(dfs, ignore_index=True)
+
+    def push_data_to_s3(self, feature_drift, prediction_drift, coverage_drift, alerts, status):
+        run_timestamp = date.today()
+        run_date = run_timestamp.strftime("%Y-%m-%d")
+        run_id = f"{run_timestamp.strftime('%Y%m%dT%H%M%SZ')}_{uuid.uuid4().hex[:8]}"
+
+        payload = {
+            "run_id": run_id,
+            "run_timestamp": run_timestamp.isoformat(),
+            "model_name": self.model_name,
+            "status": status,
+            "feature_drift": feature_drift,
+            "prediction_drift": prediction_drift,
+            "coverage_drift": coverage_drift,
+            "alerts": alerts,
+        }
+
+        key = f"monitoring/{self.model_name}/drift_runs/date={run_date}/{run_id}.json"
+
+        self.s3.put_object(
+            Bucket=self.bucket_name,
+            Key=key,
+            Body=json.dumps(payload, default=str).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return key
