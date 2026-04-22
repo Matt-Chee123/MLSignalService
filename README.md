@@ -62,18 +62,6 @@ Interactive Dashboard
    ├─ Experiment Comparison
    └─ Feature Analysis
 
-## Quickstart
-
-git clone https://github.com/Matt-Chee123/MLSignalService.git
-
-pip install -r requirements.txt
-
-python pipeline/master_pipeline.py --config configs/example.json
-
-cd app
-
-streamlit run app.py
-
 ![Overview](screenshots/overview.png)
 ![Experiment Details](screenshots/experiment.png)
 ![Backtest Results](screenshots/backtest.png)
@@ -96,3 +84,15 @@ pipeline cleaning and validation was essential to avoid accidentally “seeing t
 
 - Have implemented some fundamentals and sector benchmarks for the data due to the longer 
 horizon
+
+## Further Changes since V1
+
+- Containerisation & Cloud: Dockerised full pipeline + FastAPI inference service. Deployed to AWS EC2 with S3 model store and ECR image registry. docker-compose up now runs entire system reproducibly.
+
+- Experiment Tracking: Integrated MLflow Tracking + Model Registry. All runs log params, metrics, IC, Sharpe....
+
+- Monitoring: Evidently Integrated to monitor for feature and prediction drift using ASW Lambda
+
+### Developing
+
+- Streamlit dash hosted on EC2 using aws artifacts
