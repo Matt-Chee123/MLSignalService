@@ -65,21 +65,10 @@ class DataHandler:
             return pd.DataFrame()
         return pd.concat(dfs, ignore_index=True)
 
-    def push_data_to_s3(self, feature_drift, prediction_drift, coverage_drift, alerts, status):
+    def push_data_to_s3(self, payload):
         run_timestamp = date.today()
         run_date = run_timestamp.strftime("%Y-%m-%d")
         run_id = f"{run_timestamp.strftime('%Y%m%dT%H%M%SZ')}_{uuid.uuid4().hex[:8]}"
-
-        payload = {
-            "run_id": run_id,
-            "run_timestamp": run_timestamp.isoformat(),
-            "model_name": self.model_name,
-            "status": status,
-            "feature_drift": feature_drift,
-            "prediction_drift": prediction_drift,
-            "coverage_drift": coverage_drift,
-            "alerts": alerts,
-        }
 
         key = f"monitoring/{self.model_name}/drift_runs/date={run_date}/{run_id}.json"
 

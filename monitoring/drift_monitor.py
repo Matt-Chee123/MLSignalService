@@ -1,9 +1,12 @@
 from evidently import Dataset, DataDefinition, Report, Regression
 from evidently.metrics import ValueDrift
+from datetime import date, timedelta
+import uuid
 
 class DriftMonitor:
-    def __init__(self, config, reference, current, metadata):
+    def __init__(self, config, reference, current, metadata, model_name):
         self.training_tickers = config['tickers']
+        self.model_name = model_name
 
         if self.training_tickers:
             in_dist_mask = current["ticker"].isin(self.training_tickers)
@@ -121,4 +124,26 @@ class DriftMonitor:
         else:
             status = 'green'
 
-        return alerts, status
+        return alerts, status#
+
+    def run(self):
+        feat_drift = self.detect_feature_drift()
+        pred_drift = self.detect_prediction_drift()
+        cov_drift = self.detect_coverage_drift()
+        alerts, status = self.evaluate_drift_alerts(feat_drift, pred_drift, cov_drift)
+
+        run_timestamp = date.today()
+        run_id = f"{run_timestamp.strftime('%Y%m%dT%H%M%SZ')}_{uuid.uuid4().hex[:8]}"
+
+        payload = {
+            "run_id": run_id,
+            "run_timestamp": run_timestamp.isoformat(),
+            "model_name": self.model_name,
+            "status": status,
+            "feature_drift": feat_drift,
+            "prediction_drift": pred_drift,
+            "coverage_drift": cov_drift,
+            "alerts": alerts,
+        }
+
+        return payload

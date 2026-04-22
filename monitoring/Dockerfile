@@ -1,10 +1,8 @@
-FROM python:3.12
+FROM public.ecr.aws/lambda/python:3.12
 
-WORKDIR /app
+COPY monitoring/requirements.txt ${LAMBDA_TASK_ROOT}/
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt -t ${LAMBDA_TASK_ROOT}
 
-COPY monitoring/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+COPY monitoring/ ${LAMBDA_TASK_ROOT}/monitoring/
 
-COPY monitoring/ ./monitoring/
-
-CMD ["python", "-m", "monitoring.orchestrator"]
+CMD ["monitoring.orchestrator.lambda_handler"]
