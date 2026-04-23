@@ -1,11 +1,12 @@
 import os
 from mlflow.tracking import MlflowClient
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
-AWS_REGION = os.environ.get('AWS_REGION','eu-west-2')
-BUCKET = os.environ['MONITORING_BUCKET']
+AWS_REGION = os.environ.get('REGION','eu-west-2')
+BUCKET = os.environ['ARTIFACT_BUCKET']
 SNS_TOPIC_ARN = os.environ['SNS_TOPIC_ARN']
 MODEL_ARTIFACTS_BUCKET = os.environ.get("MODEL_ARTIFACTS_BUCKET", "ml-signal-service")
 MLFLOW_TRACKING_URI = os.environ.get('MLFLOW_TRACKING_URI', 'http://localhost:5000')
